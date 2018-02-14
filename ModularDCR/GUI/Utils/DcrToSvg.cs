@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace GUI.Utils
 {
@@ -11,9 +12,10 @@ namespace GUI.Utils
     {
         public static async Task<string> GetSvgFromDcr(string dcr)
         {
-            var body = "src=" + dcr;
-
-            var noplus = body.Replace("+", "%2B");
+            //dcr = dcr.Replace(":", "__e");
+            var body = "src=" + System.Net.WebUtility.UrlEncode(dcr);
+            //var qwe = System.Net.WebUtility.UrlEncode(body);
+            //var noplus = body.Replace("+", "%2B");
 
             //var encoded = Uri.EscapeDataString(body);
 
@@ -24,7 +26,9 @@ namespace GUI.Utils
             {
                 wc.Headers[HttpRequestHeader.ContentType] = "application/x-www-form-urlencoded";
 
-                var result = await wc.UploadStringTaskAsync("http://dcr.itu.dk:8023/trace/dcr", noplus);
+                var result = await wc.UploadStringTaskAsync("http://dcr.itu.dk:8023/trace/dcr", body);
+
+                result = result.Replace("âœ“", "&#10003;");
 
                 return result;
             }

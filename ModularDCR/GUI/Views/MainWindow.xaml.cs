@@ -17,6 +17,7 @@ using GUI.Utils;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
 using GUI.Models;
+using Svg;
 
 namespace GUI.Views
 {
@@ -26,6 +27,9 @@ namespace GUI.Views
     public partial class MainWindow : Window
     {
         public MainWindowModel Model { get; set; }
+
+        private Point _clickPoint;
+        private SvgDocument _currentSvgDocument;
 
         public MainWindow()
         {
@@ -41,6 +45,8 @@ namespace GUI.Views
             try
             {
                 var svg = await DcrToSvg.GetSvgFromDcr(DcrText.Text);
+
+                _currentSvgDocument = SvgDocument.FromSvg<SvgDocument>(svg);
 
                 WpfDrawingSettings settings = new WpfDrawingSettings();
                 settings.IncludeRuntime = true;
@@ -67,8 +73,20 @@ namespace GUI.Views
 
         private void DcrGraphImage_OnMouseDown(object sender, MouseButtonEventArgs e)
         {
-            var pos = e.GetPosition(DcrGraphImage);
-            var stop = 1;
+            _clickPoint = e.GetPosition(DcrGraphImage);
+        }
+
+        private void DcrGraphImage_OnMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            Console.WriteLine(_clickPoint.ToString());
+            if (_clickPoint.Equals(e.GetPosition(DcrGraphImage)))
+            {
+                foreach (var elm in _currentSvgDocument.Children[0].Children.Where(x => x.ID != null && x.ID.Contains("__e")))
+                {
+                    //var bounds = elm.
+                    //if()
+                }
+            }
         }
     }
 }

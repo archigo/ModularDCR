@@ -21,13 +21,36 @@
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="6*"/>
         </Grid.ColumnDefinitions>
+
         <materialDesign:Card Grid.Column="0" Margin="5" VerticalAlignment="Stretch">
             <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0"  AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="DcrText" Margin="10,10,10,10" Text="A --&gt;* B" DataContext="{Binding DcrText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="DcrText_TextChanged"/>
         </materialDesign:Card>
-        <materialDesign:Card Grid.Column="1" Margin="5" VerticalAlignment="Stretch">
-            <utils:ZoomBorder Grid.Column="1" Margin="10,10,10,10">
-                <Image Name="DcrGraphImage" Source="{Binding DcrImage, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,0" MouseDown="DcrGraphImage_OnMouseDown"></Image>
-            </utils:ZoomBorder>
-        </materialDesign:Card>
+        <Grid Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="6*"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+            <materialDesign:Card Grid.Column="0" Grid.Row="0" Margin="5" VerticalAlignment="Stretch">
+                <utils:ZoomBorder Margin="10,10,10,10">
+                    <Image Name="DcrGraphImage" Source="{Binding DcrImage, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,0" MouseDown="DcrGraphImage_OnMouseDown" MouseUp="DcrGraphImage_OnMouseUp"></Image>
+                </utils:ZoomBorder>
+            </materialDesign:Card>
+            <ListView Margin="10" Name="lvUsers">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" Width="120" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Header="Age" Width="50" DisplayMemberBinding="{Binding Age}" />
+                        <GridViewColumn Header="Mail" Width="150" DisplayMemberBinding="{Binding Mail}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <materialDesign:Card Grid.Column="0" Grid.Row="1" Margin="5" VerticalAlignment="Stretch">
+                <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}"></TextBox>
+            </materialDesign:Card>
+        </Grid>
+
     </Grid>
 </Window>
