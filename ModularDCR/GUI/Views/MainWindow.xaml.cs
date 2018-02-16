@@ -14,9 +14,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using GUI.Utils;
+using GUI.Models;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
-using GUI.Models;
 using Svg;
 
 namespace GUI.Views
@@ -29,7 +29,8 @@ namespace GUI.Views
         public MainWindowModel Model { get; set; }
 
         private Point _clickPoint;
-        private SvgDocument _currentSvgDocument;
+
+        private Transform qwe;
 
         public MainWindow()
         {
@@ -45,16 +46,27 @@ namespace GUI.Views
             try
             {
                 var svg = await DcrToSvg.GetSvgFromDcr(DcrText.Text);
+                
 
-                _currentSvgDocument = SvgDocument.FromSvg<SvgDocument>(svg);
+                var svgDoc = SvgDocument.FromSvg<SvgDocument>(svg);
+
+                Model.Events.Clear();
+                foreach (var activity in svgDoc.Children[0].Children.Where(x => x.ID != null && x.ID.Contains("__e")))
+                {
+                    Model.Events.Add(activity.ID.Replace("__e", ""));
+                }
 
                 WpfDrawingSettings settings = new WpfDrawingSettings();
                 settings.IncludeRuntime = true;
                 settings.TextAsGeometry = true;
+                settings.OptimizePath = true;
 
                 FileSvgReader converter = new FileSvgReader(settings);
 
                 var xamlFile = converter.Read(new MemoryStream(Encoding.UTF8.GetBytes(svg)));
+
+                qwe = ((xamlFile.Children[0] as DrawingGroup).Children[0] as DrawingGroup).Transform;
+                
 
                 Model.DcrImage = new DrawingImage(xamlFile);
             }
@@ -78,15 +90,23 @@ namespace GUI.Views
 
         private void DcrGraphImage_OnMouseUp(object sender, MouseButtonEventArgs e)
         {
-            Console.WriteLine(_clickPoint.ToString());
-            if (_clickPoint.Equals(e.GetPosition(DcrGraphImage)))
-            {
-                foreach (var elm in _currentSvgDocument.Children[0].Children.Where(x => x.ID != null && x.ID.Contains("__e")))
-                {
-                    //var bounds = elm.
-                    //if()
-                }
-            }
+            var p = qwe.Inverse.Transform(_clickPoint);
+            p.X += -14.4;
+            p.Y += -14.4;
+            Console.WriteLine(p.ToString());
+            //if (_clickPoint.Equals(e.GetPosition(DcrGraphImage)))
+            //{
+            //    foreach (var elm in _currentSvgDocument.Children[0].Children.Where(x => x.ID != null && x.ID.Contains("__e")))
+            //    {
+            //        //var bounds = elm.
+            //        //if()
+            //    }
+            //}
+        }
+
+        private void DcrEvent_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var stop = 1;
         }
     }
 }

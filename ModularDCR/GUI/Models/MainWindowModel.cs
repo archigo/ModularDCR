@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -14,6 +15,7 @@ namespace GUI.Models
     {
         private DrawingImage _dcrImage;
         private string _dcrText;
+        private ObservableCollection<string> _events = new ObservableCollection<string> { "ASD", "qwe"};
 
         public DrawingImage DcrImage
         {
@@ -32,6 +34,16 @@ namespace GUI.Models
             {
                 _dcrText = value;
                 OnPropertyChanged(nameof(DcrText));
+            }
+        }
+
+        public ObservableCollection<string> Events
+        {
+            get => _events;
+            set
+            {
+                _events = value;
+                OnPropertyChanged(nameof(Events));
             }
         }
     }

@@ -286,3 +286,6 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+!ModularDcrDb.mdf
+!ModularDcrDb_log.ldf
