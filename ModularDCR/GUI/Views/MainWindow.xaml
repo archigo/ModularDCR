@@ -23,7 +23,7 @@
         </Grid.ColumnDefinitions>
 
         <materialDesign:Card Grid.Column="0" Margin="5" VerticalAlignment="Stretch">
-            <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0"  AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="DcrText" Margin="10,10,10,10" Text="A --&gt;* B" DataContext="{Binding DcrText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="DcrText_TextChanged"/>
+            <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0" AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="DcrText" Text="A --&gt;* B" Margin="10,10,10,10" DataContext="{Binding DcrText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="DcrText_TextChanged" FontWeight="DemiBold"/>
         </materialDesign:Card>
         <Grid Grid.Column="1">
             <Grid.ColumnDefinitions>
@@ -34,9 +34,17 @@
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
             <materialDesign:Card Grid.Column="0" Grid.Row="0" Margin="5" VerticalAlignment="Stretch">
-                <utils:ZoomBorder Margin="10,10,10,10">
-                    <Image Name="DcrGraphImage" Source="{Binding DcrImage, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,0" MouseDown="DcrGraphImage_OnMouseDown" MouseUp="DcrGraphImage_OnMouseUp"></Image>
-                </utils:ZoomBorder>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="0.5*"/>
+                        <RowDefinition Height="10*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.Row="0" Text="{Binding DcrExplanation, Mode=OneTime}" FontWeight="DemiBold" Opacity="0.7"/>
+                    <utils:ZoomBorder Grid.Row="1" Margin="10,10,10,10">
+                        <Image Source="{Binding DcrImage, UpdateSourceTrigger=PropertyChanged}" MouseRightButtonUp="DcrGraphImage_OnMouseRightButtonUp" Margin="0,0,0,0"/>
+                    </utils:ZoomBorder>
+                </Grid>
+                    
             </materialDesign:Card>
             <ListBox Grid.Column="0" VerticalContentAlignment="Center" Grid.Row="1" ItemsSource="{Binding Events, UpdateSourceTrigger=PropertyChanged}" Margin="5">
                 <ListBox.ItemsPanel>
@@ -53,8 +61,8 @@
                 </ListBox.ItemTemplate>
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
-                        <Setter Property="Padding" Value="5"/>
-                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="5"/>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>

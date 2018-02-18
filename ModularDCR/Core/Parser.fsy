@@ -1,0 +1,329 @@
+﻿%{
+
+// vi: ft=fsharp
+
+open DCR
+open D
+
+type rel = CON of int | RES of int | INC | EXC | MIL | CONRES
+
+type evt = string * label * List<string * string>
+type evts = Excl of evts
+          | Exec of int * evts
+          | Incl of evts
+          | Pend of int * evts 
+          | Local of evts
+          | Evt of evt
+          | Seq of evts list
+          | Sub of evt * dcr
+
+type evinfo = { ev:    string;
+                l:     string option; 
+                tags : List<string * string> }
+
+let lab (evi : evinfo) = match (evi.l) with
+                         | Some l -> l
+                         | None -> evi.ev
+
+let extend x y G = 
+    match Map.tryFind x G with 
+      Some s -> Map.add x (Set.add y s) G
+    | None -> Map.add x (Set.singleton y) G
+
+type state = { 
+    excl: bool ; incl : bool ; pend : int option ; local : bool ; exec : int option
+}
+
+let rec labelled_evts_of = function
+    | Excl ex -> labelled_evts_of ex
+    | Exec (_, ex) -> labelled_evts_of ex
+    | Incl ex -> labelled_evts_of ex
+    | Pend (_, ex) -> labelled_evts_of ex
+    | Local ex -> labelled_evts_of ex
+    | Evt (e, l, t) -> [e,l,t]
+    | Seq exs -> List.collect labelled_evts_of exs
+    | Sub ((e,l,t), _) -> [e,l,t]
+
+let evts_of = labelled_evts_of >> List.map (fun (x,_,_) -> x) 
+
+let add_event (G0 : dcr) (ex :evts) = 
+    let rec loop (s : state) G = function 
+        | Excl ex      -> loop { s with excl=true ; incl = false } G ex
+        | Exec (k, ex) -> loop { s with exec=Some k } G ex
+        | Incl ex      -> loop { s with incl=true ; excl = false } G ex
+        | Pend (d, ex) -> loop { s with pend=Some d } G ex
+        | Local ex     -> loop { s with local=true } G ex
+        | Evt (e,l,t)  -> 
+            { G with 
+                events = Set.add e G.events 
+                labels = match Map.tryFind e G.labels, l with
+                         | None, _ -> Map.add e l G.labels
+                         | Some l0, l1 when l0 = l1 -> G.labels
+                         | Some (Neutral h0), l1 when h0 = e -> Map.add e l1 G.labels
+                         | Some l0, (Neutral h1) when h1 = e -> Map.add e l0 G.labels
+                         | _ -> error 0030 "Event '%s' has multiple incompatible labels." e
+                local  = if s.local then 
+                            if Set.contains e G.local then
+                                error 0031 "Re-localisation of event '%s' (Barendrecht violation local/local)." e
+                            elif Set.contains e G.events then
+                                error 0032 "Localisation of event '%s' (Barendrecht violation shared/local)." e
+                            else 
+                                Set.add e G.local
+                         else G.local   
+                insi = match s.incl, s.excl with 
+                         true, _ -> Set.add e G.insi
+                       | _, true -> Set.remove e G.insi 
+                       | false, false -> 
+                              if Set.contains e G.events
+                              then G.insi
+                              else Set.add e G.insi
+                              (* If we weren't explicitly required to
+                                 include or exclude an event, we 
+                                 include it if this is the first time
+                                 we see it, otherwise do nothing. *)
+                exec = 
+                  match s.exec with
+                  | None -> G.exec
+                  | Some k -> Set.add e G.exec
+
+                pend = 
+                  match s.pend with
+                  | None -> G.pend
+                  | Some d -> Set.add e G.pend
+
+                tags = 
+                    let ts = match Map.tryFind e G.tags with
+                             | Some ts -> ts
+                             | None -> Map.empty
+                    let ets = Seq.fold (fun ts (k, v) -> 
+                                           match Map.tryFind k ts with
+                                           | None -> Map.add k (Set.singleton v) ts
+                                           | Some vs -> Map.add k (Set.add v vs) ts)
+                                       ts
+                                       t
+                    Map.add e ets G.tags
+
+                t_ex = 
+                  match s.exec with
+                  | None -> G.t_ex
+                  | Some k -> Map.add e k G.t_ex
+
+                t_re = 
+                  match s.pend with
+                  | None -> G.t_re
+                  | Some d -> Map.add e d G.t_re
+            } 
+        | Seq exs -> exs |> List.fold (loop s) G
+        | Sub (ev, H) -> 
+            let G = loop s G (Evt ev)
+            { G with defs = evts_of ex |> List.fold (fun d e -> extend e H d) G.defs }
+
+    loop { excl=false; incl=false; pend=None ; local=false ; exec=None } G0 ex
+
+let add_group G (title, H) = 
+    unchecked_subsuming_union G 
+        { H with groups = (title, H.events, H.groups)
+                          |> Set.singleton
+                          |> Grouping.Partition }
+
+let rec add_relation G (ex, r, fx) =
+    let add_rel r x G y =
+        match r with
+              CON k -> { G with cond_on = extend y x G.cond_on 
+                                t_c     = Map.add (x,y) k G.t_c } 
+            | RES k -> { G with resp    = extend x y G.resp 
+                                t_r     = Map.add (x,y) k G.t_r }     
+            | INC -> { G with incl    = extend x y G.incl }    
+            | EXC -> { G with excl    = extend x y G.excl }    
+            | MIL -> { G with mile_on = extend y x G.mile_on } 
+            | CONRES -> failwith "Internal error."
+    let G = G |> flip add_event ex |> flip add_event fx 
+    match r with 
+      CONRES -> G |> flip add_relation (ex, CON 0, fx) |> flip add_relation (ex, RES 0, fx)
+    | _ -> let xs = evts_of ex
+           let ys = evts_of fx
+           List.fold (fun G' x -> List.fold (add_rel r x) G' ys) G xs
+
+let add_relations G rels = List.fold add_relation G rels
+
+let add_guarded_relations G rels guard = 
+    let G0 = 
+        rels 
+        |> List.fold (fun G' (ex, _, fx) -> G' |> flip add_event ex |> flip add_event fx)
+                     G
+    { G0 with conds = (guard, add_relations DCR.empty rels) :: G.conds }
+
+let bridge = function 
+    | (x, _, _) :: _ -> 
+        (* Avoid redefining events. *)
+        labelled_evts_of x |> List.map Evt |> Seq
+    | _ -> failwith "Internal error."
+
+let patch_groups G = 
+    let names = Grouping.names G.groups |> Set.ofSeq
+    let fmap m = Map.filter (fun e _ -> Set.contains e names |> not) m
+    { G with 
+        events = Set.difference G.events names
+        labels = fmap G.labels 
+        exec = Set.difference G.exec names
+        insi = Set.difference G.insi names
+        pend = Set.difference G.pend names 
+        tags = fmap G.tags }
+    // TODO. Presumably, we should have the ability to have "local" groups. 
+    //       Or maybe these are the unnamed ones?
+
+%}
+
+%start decls
+%start action
+%start label
+
+%token <string> IID ID STR
+%token SPLITCONHEAD SPLITCONTAIL SPLITRESHEAD SPLITRESTAIL
+%token <rel> ARROW
+%token <int> NUM
+%token ROUTE
+%token EOF MINUS PLUS BANG SLASH COLON CHECKMARK 
+%token QUESTION COMMA
+%token LPAR RPAR LBRACE RBRACE LBRACK RBRACK
+%token OR
+%token AND
+%token CONCAT
+%token LT GT EQ NEQ
+%token TRUE FALSE
+%token LTLT GTGT RBRB LBLB
+%token GROUP WHEN
+%token PARALLEL
+
+%type <dcr> decls
+%type <action> action
+%type <label> label
+
+%nonassoc low
+%nonassoc LBRACE
+%nonassoc QUESTION LT
+%nonassoc high
+
+%left AND OR
+
+%%
+
+decls:  
+    exprs EOF                           { patch_groups $1 }
+
+exprs:  
+    exprs relation                      { add_relations $1 $2 }
+  | exprs relation WHEN expr            { add_guarded_relations $1 $2 $4 }
+  | exprs event                         { add_event $1 $2 }
+  | exprs group                         { add_group $1 $2 }
+  |                                     { DCR.empty }
+
+group: 
+    GROUP LBRACE exprs RBRACE           { None, $3 }
+  | GROUP str LBRACE exprs RBRACE       { Some $2, $4 }
+
+relation: 
+    event arrow event                   { [$1, $2, $3] }
+  | event arrow relation                { ($1, $2, bridge $3) :: $3 }
+
+arrow:
+    ARROW                               { $1 }
+  | SPLITCONTAIL NUM SPLITCONHEAD       { CON $2 }
+  | SPLITRESTAIL NUM SPLITRESHEAD       { RES $2 }
+                                          
+event: 
+    atom %prec low                      { $1 }
+  | MINUS event                         { Excl $2 }
+  | PLUS event                          { Incl $2 }
+  | BANG opt_time event                 { Pend (defaultArg $2 DCR.infinity, $3) }
+  | SLASH event                         { Local $2 }
+  | COLON opt_time event                { Exec (defaultArg $2 0, $3) }
+  | CHECKMARK opt_time event            { Exec (defaultArg $2 0, $3) }
+  | LPAR events RPAR                    { Seq $2 }
+
+opt_time: 
+    NUM                                 { Some $1 }
+  | /* empty */                         { None }
+                               
+events: 
+    event events                        { $1 :: $2 }
+  | /* empty */                         { [] }
+
+atom: 
+    nucleus                             { Evt ($1.ev, Neutral <| lab $1, $1.tags) }
+  | nucleus LTLT expr GTGT              { Evt ($1.ev, Output (lab $1, $3), $1.tags) }
+  | nucleus LBLB expr RBRB              { Evt ($1.ev, Computation (lab $1, $3), $1.tags) }
+  | nucleus LBRACE exprs RBRACE         { Sub (($1.ev, Neutral (lab $1), $1.tags), $3)  }
+  | nucleus QUESTION LBRACE exprs RBRACE 
+                                        { Sub (($1.ev, Input (lab $1), $1.tags), $4) } 
+  | nucleus QUESTION                    { Evt ($1.ev, Input (lab $1), $1.tags) } 
+nucleus: 
+    str                                 { {ev=$1; l=Some $1; tags=[]} }
+  | str LBRACK evinfo RBRACK            { {$3 with ev=$1} }
+
+
+evinfo:
+    evinfo str                          { {$1 with l=Some $2} }
+  | evinfo ID EQ str                    { {$1 with tags=($2,$4) :: $1.tags} }
+  | /* empty */                         { {ev=""; l=None; tags=[]} }
+
+str:
+    ID                                  { $1 }
+  | STR                                 { $1 }
+  | NUM                                 { string $1 }
+
+strs: 
+    str strs                            { $1 :: $2 }
+  | /* empty */                         { [] }
+
+
+
+expr:
+    expr AND expr                       { Data.And ($1, $3) }
+  | expr OR expr                        { Data.Or ($1, $3) }
+  | expr LT expr                        { Data.Lt ($1,$3) }
+  | expr GT expr                        { Data.Gt ($1,$3) }
+  | expr EQ expr                        { Data.Eq ($1,$3) }
+  | expr NEQ expr                       { Data.Neq ($1,$3) }
+  | expr CONCAT expr                    { Data.Concat ($1, $3) }  
+  | TRUE                                { Data.Const <| Data.Bool true }
+  | FALSE                               { Data.Const <| Data.Bool false }
+  | ID                                  { Data.Var $1 }
+  | NUM                                 { Data.Const <| Data.Int $1 }
+  | STR                                 { Data.Const <| Data.String $1 }
+
+paras:                                  
+    /* empty */                         { [] }
+  | paras1                              { $1 }
+
+paras1: 
+    expr                                { [$1] } 
+  | expr COMMA paras1                   { $1 :: $3 }
+
+
+num1:
+    NUM                                 { [$1] }
+  | NUM COMMA num1                      { $1 :: $3 }
+
+ids:                                    { [] }
+   | ids1                               { $1 }
+
+ids1: ID                                { [$1] }
+    | ID COMMA ids1                     { $1 :: $3 }
+
+// User-input text-parsing
+action:
+    id                                  { Event $1 }
+  | id LT GT                            { Recv ($1, []) }
+  | id LT num1 GT                       { Recv ($1, $3 |> List.map Data.Int) }
+  | id PARALLEL id                      { Sync ($1, $3) }
+
+label:
+    id                                  { Neutral $1 }
+  | id LT expr GT                       { Output ($1, $3) }
+  | id QUESTION                         { Input $1 } 
+  | id LBLB expr RBRB                   { Computation ($1, $3) } 
+
+id: str                                 { $1 }
+  | IID                                 { $1 }
+

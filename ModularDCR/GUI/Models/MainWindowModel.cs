@@ -14,8 +14,8 @@ namespace GUI.Models
     public class MainWindowModel : SuperModel
     {
         private DrawingImage _dcrImage;
-        private string _dcrText;
-        private ObservableCollection<string> _events = new ObservableCollection<string> { "ASD", "qwe"};
+        private string _dcrText = "\"Some Activity\" -->* \"Some Other Activity\"";
+        private ObservableCollection<string> _events = new ObservableCollection<string> { "Some Activity", "Some Other Activity"};
 
         public DrawingImage DcrImage
         {
@@ -46,5 +46,7 @@ namespace GUI.Models
                 OnPropertyChanged(nameof(Events));
             }
         }
+
+        public string DcrExplanation => "Include -->+ : Exclude -->% : Response *--> : Condition -->* : Milestone --<>";
     }
 }

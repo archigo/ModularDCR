@@ -3,21 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using DataLogic.DcrGraph;
 using GUI.Utils;
 using GUI.Models;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
-using Svg;
 
 namespace GUI.Views
 {
@@ -28,9 +22,7 @@ namespace GUI.Views
     {
         public MainWindowModel Model { get; set; }
 
-        private Point _clickPoint;
-
-        private Transform qwe;
+        private DcrGraph _dcrGraph;
 
         public MainWindow()
         {
@@ -38,75 +30,69 @@ namespace GUI.Views
             Model = new MainWindowModel();
             this.DataContext = Model;
 
-            Loaded += Updateimage;
+            Loaded += OnLoaded;
         }
 
-        private async void Updateimage(object sender, RoutedEventArgs e)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            DcrText.Text = Model.DcrText;
+            //RebuildDcr(Model.DcrText);
+        }
+
+        private async void RebuildDcr(string rawDcr, bool buildInMemoryDcr = true)
+        {
+            var dcrGraph = _dcrGraph;
             try
             {
-                var svg = await DcrToSvg.GetSvgFromDcr(DcrText.Text);
-                
+                var svg = await DcrToSvg.GetSvgFromDcr(rawDcr);
 
-                var svgDoc = SvgDocument.FromSvg<SvgDocument>(svg);
-
-                Model.Events.Clear();
-                foreach (var activity in svgDoc.Children[0].Children.Where(x => x.ID != null && x.ID.Contains("__e")))
+                var settings = new WpfDrawingSettings
                 {
-                    Model.Events.Add(activity.ID.Replace("__e", ""));
+                    IncludeRuntime = true,
+                    TextAsGeometry = true,
+                    OptimizePath = true
+                };
+
+                var converter = new FileSvgReader(settings);
+
+                var drawingGroup = converter.Read(new MemoryStream(Encoding.UTF8.GetBytes(svg)));
+
+                Model.DcrImage = new DrawingImage(drawingGroup);
+
+                if (buildInMemoryDcr)
+                {
+                    dcrGraph = new DcrGraph(rawDcr);
                 }
-
-                WpfDrawingSettings settings = new WpfDrawingSettings();
-                settings.IncludeRuntime = true;
-                settings.TextAsGeometry = true;
-                settings.OptimizePath = true;
-
-                FileSvgReader converter = new FileSvgReader(settings);
-
-                var xamlFile = converter.Read(new MemoryStream(Encoding.UTF8.GetBytes(svg)));
-
-                qwe = ((xamlFile.Children[0] as DrawingGroup).Children[0] as DrawingGroup).Transform;
-                
-
-                Model.DcrImage = new DrawingImage(xamlFile);
             }
             catch
             {
+                return;
+            }
+            _dcrGraph = dcrGraph;
+
+
+            Model.Events.Clear();
+            foreach (var activity in _dcrGraph.GetExecutableActivityNames())
+            {
+                Model.Events.Add(activity);
             }
         }
 
         private void DcrText_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // todo validate input
-
-            Updateimage(null, null);
-
-        }
-
-        private void DcrGraphImage_OnMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            _clickPoint = e.GetPosition(DcrGraphImage);
-        }
-
-        private void DcrGraphImage_OnMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            var p = qwe.Inverse.Transform(_clickPoint);
-            p.X += -14.4;
-            p.Y += -14.4;
-            Console.WriteLine(p.ToString());
-            //if (_clickPoint.Equals(e.GetPosition(DcrGraphImage)))
-            //{
-            //    foreach (var elm in _currentSvgDocument.Children[0].Children.Where(x => x.ID != null && x.ID.Contains("__e")))
-            //    {
-            //        //var bounds = elm.
-            //        //if()
-            //    }
-            //}
+            RebuildDcr(DcrText.Text);
         }
 
         private void DcrEvent_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            var stop = 1;
+            var activity = sender?.GetType().GetProperty("DataContext")?.GetValue(sender, null) as string;
+            if (_dcrGraph.ExecuteActivity(activity))
+                RebuildDcr(_dcrGraph.ExportRawDcrString());
+        }
+
+        private void DcrGraphImage_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            RebuildDcr(DcrText.Text, true);
         }
     }
 }

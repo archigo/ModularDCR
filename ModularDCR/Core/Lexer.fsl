@@ -1,0 +1,91 @@
+﻿{
+
+module Lexer
+open System
+open Parser
+open Microsoft.FSharp.Text.Lexing
+
+let lexeme lexbuf = LexBuffer<char>.LexemeString lexbuf
+
+let keywords = 
+    [
+        "group",     GROUP;
+        "when",      WHEN;
+        "true",      TRUE;
+        "false",     FALSE;
+    ] |> Map.ofList
+
+}
+
+// These are some regular expression definitions
+let char        = ['a'-'z']|['A'-'Z']
+let digit       = ['0'-'9']
+let whitespace  = [' ' '\t' ]
+
+
+let newline     = ('\n' | '\r' '\n')
+let identifier  = (char|['-' '_' '\'' '$'])(char|['-' '_' '\'']|digit)*
+let iidentifier = (char|['-' '_' '\''])(char|['-' '_' '\'' '$']|digit)*
+let number      = digit+
+
+let string      = '"'[^'"']*'"'
+
+rule tokenize = parse
+| "#"           { comment lexbuf }
+| whitespace    { tokenize lexbuf }
+| newline       { lexbuf.EndPos <- lexbuf.EndPos.NextLine; 
+                  tokenize lexbuf }
+| "*-->"        { ARROW (RES DCR.infinity)}
+| "-->*"        { ARROW (CON 0)}
+| "-->+"        { ARROW INC }
+| "-->%"        { ARROW EXC }
+| "--<>"        { ARROW MIL }
+// Timed condition: A -[3]->* B
+| "-["          { SPLITCONTAIL }
+| "]->*"        { SPLITCONHEAD }
+// Timed response: A *-[3]-> B
+| "*-["         { SPLITRESTAIL }
+| "]->"         { SPLITRESHEAD }
+| "*->*"        { ARROW CONRES }
+| "++"          { CONCAT } 
+| "+"           { PLUS }
+| "%"           { MINUS }
+| "!"           { BANG }
+| "("           { LPAR }
+| ")"           { RPAR }
+| "[["          { LBLB }
+| "]]"          { RBRB }
+| "["           { LBRACK }
+| "]"           { RBRACK }
+| "{"           { LBRACE }
+| "}"           { RBRACE }
+| "/"           { SLASH }
+| ":"           { COLON }
+| "✓"           { CHECKMARK }
+| "<<"          { LTLT }
+| ">>"          { GTGT}
+| "<"           { LT }
+| ">"           { GT }
+| "&&"          { AND }
+| "||"          { OR }
+| "="           { EQ }
+| "!="          { NEQ }
+| "?"           { QUESTION }
+| ","           { COMMA }
+| "|"           { PARALLEL }
+| string        { let str = lexeme lexbuf in
+                  STR <| str.Substring (1, String.length str - 2) }
+| identifier    { let ident = lexeme lexbuf in
+                  match Map.tryFind (ident.ToLower()) keywords with
+                    Some token -> token
+                  | None -> ID ident }
+| iidentifier   { IID <| lexeme lexbuf }
+| number        { lexeme lexbuf |> int |> NUM }
+| eof           { EOF }
+| _             { D.error 0033 "Bad lexeme '%s'" <| lexeme lexbuf }
+
+and comment = parse
+| newline       { lexbuf.EndPos <- lexbuf.EndPos.NextLine;
+                  tokenize lexbuf }
+| eof           { EOF }
+| _             { comment lexbuf }
