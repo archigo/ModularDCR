@@ -72,6 +72,7 @@
     <Compile Include="DcrGraph\DcrGraph.cs" />
     <Compile Include="DcrGraph\Relation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Trace\Trace.cs" />
   </ItemGroup>
   <ItemGroup>
     <EntityDeploy Include="Database\Model.edmx">

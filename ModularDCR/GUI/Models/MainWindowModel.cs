@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using DataLogic.Trace;
 using GUI.Annotations;
 
 namespace GUI.Models
@@ -16,6 +17,17 @@ namespace GUI.Models
         private DrawingImage _dcrImage;
         private string _dcrText = "\"Some Activity\" -->* \"Some Other Activity\"";
         private ObservableCollection<string> _events = new ObservableCollection<string> { "Some Activity", "Some Other Activity"};
+        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace(){ActivitySequence = new List<string>(), Name = "Test", Recorded = DateTime.Now, Status = true}};
+
+        public ObservableCollection<Trace> Traces
+        {
+            get => _traces;
+            set
+            {
+                _traces = value;
+                OnPropertyChanged(nameof(Traces));
+            }
+        }
 
         public DrawingImage DcrImage
         {

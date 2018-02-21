@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using DataLogic.DcrGraph;
+using DataLogic.Trace;
 using GUI.Utils;
 using GUI.Models;
 using SharpVectors.Converters;
@@ -23,11 +24,14 @@ namespace GUI.Views
         public MainWindowModel Model { get; set; }
 
         private DcrGraph _dcrGraph;
+        private bool _traceRecording = false;
+        private Trace _currentlyRecordingTrace;
 
         public MainWindow()
         {
             InitializeComponent();
             Model = new MainWindowModel();
+            Model.Traces.Clear();
             this.DataContext = Model;
 
             Loaded += OnLoaded;
@@ -87,12 +91,50 @@ namespace GUI.Views
         {
             var activity = sender?.GetType().GetProperty("DataContext")?.GetValue(sender, null) as string;
             if (_dcrGraph.ExecuteActivity(activity))
+            {
                 RebuildDcr(_dcrGraph.ExportRawDcrString());
+                _currentlyRecordingTrace.ActivitySequence.Add(activity);
+            }
         }
 
         private void DcrGraphImage_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             RebuildDcr(DcrText.Text, true);
+        }
+
+        private void RecordTrace_Click(object sender, RoutedEventArgs e)
+        {
+            if (_traceRecording)
+            {
+                _traceRecording = false;
+                DcrText.IsReadOnly = false;
+                TraceSpinner.Spin = false;
+                TraceSpinner.Visibility = Visibility.Hidden;
+                RecordTrace.Content = "Trace";
+                TraceList.IsEnabled = true;
+
+                // No trace to record
+                if (_currentlyRecordingTrace.ActivitySequence.Count == 0)
+                {
+                    _currentlyRecordingTrace = null;
+                    return;
+                }
+
+                _currentlyRecordingTrace.Name = TraceNameTextBox.Text;
+                Model.Traces.Add(_currentlyRecordingTrace);
+                _currentlyRecordingTrace = null;
+                TraceNameTextBox.Text = "";
+            }
+            else
+            {
+                _traceRecording = true;
+                _currentlyRecordingTrace = new Trace();
+                DcrText.IsReadOnly = true;
+                TraceList.IsEnabled = false;
+                TraceSpinner.Spin = true;
+                TraceSpinner.Visibility = Visibility.Visible;
+                RecordTrace.Content = "Finish";
+            }
         }
     }
 }
