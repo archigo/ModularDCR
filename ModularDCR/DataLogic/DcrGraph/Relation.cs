@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DataLogic.DcrGraph
 {
-    internal class Relation
+    public class Relation
     {
         public enum RelationType
         {

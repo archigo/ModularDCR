@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataLogic.DcrGraph
 {
-    internal class Activity
+    public class Activity
     {
         public string Id { get; set; }
         public bool Executed { get; set; }

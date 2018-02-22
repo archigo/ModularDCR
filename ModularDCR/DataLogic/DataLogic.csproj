@@ -49,7 +49,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
     <Compile Include="Database\Entity1.cs">
       <DependentUpon>Model.tt</DependentUpon>
     </Compile>
@@ -72,6 +71,7 @@
     <Compile Include="DcrGraph\DcrGraph.cs" />
     <Compile Include="DcrGraph\Relation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Trace\Context.cs" />
     <Compile Include="Trace\Trace.cs" />
   </ItemGroup>
   <ItemGroup>

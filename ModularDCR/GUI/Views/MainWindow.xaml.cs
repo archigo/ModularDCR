@@ -11,6 +11,7 @@ using DataLogic.DcrGraph;
 using DataLogic.Trace;
 using GUI.Utils;
 using GUI.Models;
+using MaterialDesignThemes.Wpf;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
 
@@ -93,7 +94,8 @@ namespace GUI.Views
             if (_dcrGraph.ExecuteActivity(activity))
             {
                 RebuildDcr(_dcrGraph.ExportRawDcrString());
-                _currentlyRecordingTrace.ActivitySequence.Add(activity);
+                if(_traceRecording)
+                    _currentlyRecordingTrace.ActivitySequence.Add(activity);
             }
         }
 
@@ -120,15 +122,16 @@ namespace GUI.Views
                     return;
                 }
 
-                _currentlyRecordingTrace.Name = TraceNameTextBox.Text;
+                _currentlyRecordingTrace.Name = string.IsNullOrEmpty(TraceNameTextBox.Text) ? DateTime.Now.ToString("g") : TraceNameTextBox.Text;
                 Model.Traces.Add(_currentlyRecordingTrace);
                 _currentlyRecordingTrace = null;
                 TraceNameTextBox.Text = "";
             }
             else
             {
+                TraceOverlay.Visibility = Visibility.Visible;
                 _traceRecording = true;
-                _currentlyRecordingTrace = new Trace();
+                _currentlyRecordingTrace = new Trace(ContextType.All);
                 DcrText.IsReadOnly = true;
                 TraceList.IsEnabled = false;
                 TraceSpinner.Spin = true;
