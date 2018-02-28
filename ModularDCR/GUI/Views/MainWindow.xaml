@@ -118,26 +118,26 @@
                 <SolidColorBrush Color="Black" Opacity=".5"/>
             </DockPanel.Background>
             <materialDesign:Card VerticalAlignment="Center" HorizontalAlignment="Center">
-                <Grid>
-                    <DockPanel HorizontalAlignment="Stretch" VerticalAlignment="Top">
-                        <StackPanel Orientation="Vertical" Width="100">
-                            <Label>Name:</Label>
-                            <Label>Type:</Label>
+                <StackPanel>
+                    <DockPanel HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="5">
+                        <StackPanel Orientation="Vertical" Width="90">
+                            <Label>Name</Label>
+                            <Label>Context Type</Label>
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" MinWidth="100">
-                            <TextBox HorizontalAlignment="Stretch"> asd</TextBox>
-                            <xctk:DropDownButton>
-                                <xctk:DropDownButton.DropDownContent>
-                                    <StackPanel Orientation="Vertical">
-                                        <Label>All</Label>
-                                        <Label>Defined</Label>
-                                    </StackPanel>
-                                </xctk:DropDownButton.DropDownContent>
-                            </xctk:DropDownButton>
+                            <TextBox HorizontalAlignment="Stretch" TextAlignment="Center" >
+                                <utils:WatermarkService.Watermark>
+                                    <TextBlock TextAlignment="Center" VerticalAlignment="Center">Name...</TextBlock>
+                                </utils:WatermarkService.Watermark>
+                            </TextBox>
+                            <ComboBox SelectedIndex="0">
+                                <ComboBoxItem>All</ComboBoxItem>
+                                <ComboBoxItem>Defined</ComboBoxItem>
+                            </ComboBox>
                         </StackPanel>
                     </DockPanel>
-                    
-                </Grid>
+                    <Button Width="70" HorizontalAlignment="Right" Margin="5" Click="ButtonTraceOverlayDone_Click">Done</Button>
+                </StackPanel>
             </materialDesign:Card>
 
             <!-- Add controls as needed -->
@@ -146,3 +146,4 @@
     
 
 </Window>
+

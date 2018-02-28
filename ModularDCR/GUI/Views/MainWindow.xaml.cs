@@ -139,5 +139,10 @@ namespace GUI.Views
                 RecordTrace.Content = "Finish";
             }
         }
+
+        private void ButtonTraceOverlayDone_Click(object sender, RoutedEventArgs e)
+        {
+            
+        }
     }
 }
