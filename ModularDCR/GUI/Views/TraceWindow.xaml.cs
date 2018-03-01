@@ -11,17 +11,23 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using DataLogic.Trace;
+using GUI.Models;
 
 namespace GUI.Views
 {
     /// <summary>
-    /// Interaction logic for CreateTraceWindow.xaml
+    /// Interaction logic for TraceWindow.xaml
     /// </summary>
-    public partial class CreateTraceWindow : Window
+    public partial class TraceWindow : Window
     {
-        public CreateTraceWindow()
+        public TraceWindowModel Model { get; set; }
+        public TraceWindow(Trace trace)
         {
             InitializeComponent();
+            Model = new TraceWindowModel(trace);
+            this.DataContext = Model;
+
         }
     }
 }

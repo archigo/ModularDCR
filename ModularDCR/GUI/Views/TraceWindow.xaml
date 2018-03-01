@@ -1,0 +1,14 @@
+﻿<Window x:Class="GUI.Views.TraceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUI.Views"
+        xmlns:models="clr-namespace:GUI.Models"
+        d:DataContext="{d:DesignInstance Type=models:TraceWindowModel, IsDesignTimeCreatable=True}"
+        mc:Ignorable="d"
+        Title="TraceWindow" Height="300" Width="300">
+    <Grid>
+        <TextBox Text="{Binding Trace.Name, Mode=TwoWay}"></TextBox>
+    </Grid>
+</Window>

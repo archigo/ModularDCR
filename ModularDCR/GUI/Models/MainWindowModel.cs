@@ -17,7 +17,8 @@ namespace GUI.Models
         private DrawingImage _dcrImage;
         private string _dcrText = "\"Some Activity\" -->* \"Some Other Activity\"";
         private ObservableCollection<string> _events = new ObservableCollection<string> { "Some Activity", "Some Other Activity"};
-        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace(ContextType.All){ActivitySequence = new List<string>(), Name = "Test", Recorded = DateTime.Now, Status = true}};
+        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace("Test",ContextType.All){ActivitySequence = new List<string>(), Recorded = DateTime.Now, Status = true}};
+        private string _traceOverlayTaceName = "";
 
         public ObservableCollection<Trace> Traces
         {
@@ -60,5 +61,15 @@ namespace GUI.Models
         }
 
         public string DcrExplanation => "Include -->+ : Exclude -->% : Response *--> : Condition -->* : Milestone --<>";
+
+        public string TraceOverlayTaceName
+        {
+            get => _traceOverlayTaceName;
+            set
+            {
+                _traceOverlayTaceName = value;
+                OnPropertyChanged(nameof(TraceOverlayTaceName));
+            }
+        }
     }
 }

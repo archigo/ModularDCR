@@ -7,7 +7,7 @@ namespace DataLogic.Trace
     public class Context
     {
         public ContextType ContextType { get; set; }
-        public List<Activity> ContextActivities { get; set; }
+        public HashSet<string> ContextActivities { get; set; }
 
         public Context(ContextType type)
         {
@@ -17,12 +17,12 @@ namespace DataLogic.Trace
                     ContextActivities = null;
                     break;
                 case ContextType.Defined:
-                    ContextActivities = new List<Activity>();
+                    ContextActivities = new HashSet<string>();
                     break;
                 default:
                     throw new Exception("A contextType case was not handled");
             }
         }
     }
-    public enum ContextType { Defined, All }
+    public enum ContextType { All, Defined }
 }

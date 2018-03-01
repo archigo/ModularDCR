@@ -129,21 +129,17 @@
     </Compile>
     <Compile Include="Models\MainWindowModel.cs" />
     <Compile Include="Models\SuperModel.cs" />
+    <Compile Include="Models\TraceWindowModel.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Utils\DcrToSvg.cs" />
     <Compile Include="Utils\WatermarkService.cs" />
     <Compile Include="Utils\ZoomBorder.cs" />
+    <Compile Include="Views\TraceWindow.xaml.cs">
+      <DependentUpon>TraceWindow.xaml</DependentUpon>
+    </Compile>
     <Page Include="Controls\CircularProgressBar.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Views\CreateTracePage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Views\CreateTraceWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -153,16 +149,14 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Views\CreateTracePage.xaml.cs">
-      <DependentUpon>CreateTracePage.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\CreateTraceWindow.xaml.cs">
-      <DependentUpon>CreateTraceWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\TraceWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

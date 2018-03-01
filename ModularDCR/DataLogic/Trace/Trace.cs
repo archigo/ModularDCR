@@ -12,9 +12,22 @@ namespace DataLogic.Trace
         public bool Status { get; set; } = true;
         public Context Context { get; set; }
 
-        public Trace(ContextType type)
+        public Trace(string name, ContextType type)
         {
+            Name = string.IsNullOrEmpty(name) ? DateTime.Now.ToString("g") : name;
             Context = new Context(type);
+        }
+
+        public void RecordActivityExecution(string activity)
+        {
+            ActivitySequence.Add(activity);
+            if(Context.ContextType is ContextType.Defined)
+                Context.ContextActivities.Add(activity);
+        }
+
+        public void AddToContext(string activity)
+        {
+            Context.ContextActivities.Add(activity);
         }
     }
 }

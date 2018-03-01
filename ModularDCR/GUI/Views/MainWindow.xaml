@@ -60,7 +60,7 @@
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <materialDesign:Card MouseLeftButtonUp="DcrEvent_OnMouseLeftButtonUp"  VerticalAlignment="Stretch">
+                            <materialDesign:Card MouseLeftButtonUp="DcrEvent_OnMouseLeftButtonUp" MouseRightButtonUp="DcrEvent_OnMouseRightButtonUp" VerticalAlignment="Stretch">
                                 <Label Name="EventId" Content="{Binding}" ></Label>
                             </materialDesign:Card>
                         </DataTemplate>
@@ -90,7 +90,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Name}"  />
+                                    <TextBlock MouseLeftButtonUp="Trace_Click" Name="TraceName"  Text="{Binding Name}"  />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -113,7 +113,7 @@
                 </materialDesign:Card>
             </Grid>
         </Grid>
-        <DockPanel x:Name="TraceOverlay" Panel.ZIndex="1000" Visibility="Visible">
+        <DockPanel x:Name="TraceOverlay" Panel.ZIndex="1000" Visibility="Hidden">
             <DockPanel.Background>
                 <SolidColorBrush Color="Black" Opacity=".5"/>
             </DockPanel.Background>
@@ -125,18 +125,18 @@
                             <Label>Context Type</Label>
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" MinWidth="100">
-                            <TextBox HorizontalAlignment="Stretch" TextAlignment="Center" >
+                            <TextBox Name="TraceOverlayTraceName" KeyUp="TraceOverlayTraceNameOnKeyUp" HorizontalAlignment="Stretch" TextAlignment="Center">
                                 <utils:WatermarkService.Watermark>
-                                    <TextBlock TextAlignment="Center" VerticalAlignment="Center">Name...</TextBlock>
+                                    <TextBlock  TextAlignment="Center" VerticalAlignment="Center">Name...</TextBlock>
                                 </utils:WatermarkService.Watermark>
                             </TextBox>
-                            <ComboBox SelectedIndex="0">
+                            <ComboBox Name="TraceOverlayTraceContextType" SelectedIndex="0">
                                 <ComboBoxItem>All</ComboBoxItem>
                                 <ComboBoxItem>Defined</ComboBoxItem>
                             </ComboBox>
                         </StackPanel>
                     </DockPanel>
-                    <Button Width="70" HorizontalAlignment="Right" Margin="5" Click="ButtonTraceOverlayDone_Click">Done</Button>
+                    <Button Name="TraceOverlayDoneButton" Width="70" HorizontalAlignment="Right" Margin="5" Click="ButtonTraceOverlayDone_Click" IsEnabled="False">Done</Button>
                 </StackPanel>
             </materialDesign:Card>
 

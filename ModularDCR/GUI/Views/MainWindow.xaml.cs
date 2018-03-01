@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using DataLogic.DcrGraph;
@@ -36,6 +38,7 @@ namespace GUI.Views
             this.DataContext = Model;
 
             Loaded += OnLoaded;
+
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -94,8 +97,10 @@ namespace GUI.Views
             if (_dcrGraph.ExecuteActivity(activity))
             {
                 RebuildDcr(_dcrGraph.ExportRawDcrString());
-                if(_traceRecording)
-                    _currentlyRecordingTrace.ActivitySequence.Add(activity);
+                if (_traceRecording)
+                {
+                    _currentlyRecordingTrace.RecordActivityExecution(activity);
+                }
             }
         }
 
@@ -122,16 +127,12 @@ namespace GUI.Views
                     return;
                 }
 
-                _currentlyRecordingTrace.Name = string.IsNullOrEmpty(TraceNameTextBox.Text) ? DateTime.Now.ToString("g") : TraceNameTextBox.Text;
                 Model.Traces.Add(_currentlyRecordingTrace);
                 _currentlyRecordingTrace = null;
-                TraceNameTextBox.Text = "";
             }
             else
             {
                 TraceOverlay.Visibility = Visibility.Visible;
-                _traceRecording = true;
-                _currentlyRecordingTrace = new Trace(ContextType.All);
                 DcrText.IsReadOnly = true;
                 TraceList.IsEnabled = false;
                 TraceSpinner.Spin = true;
@@ -142,7 +143,44 @@ namespace GUI.Views
 
         private void ButtonTraceOverlayDone_Click(object sender, RoutedEventArgs e)
         {
-            
+
+            _traceRecording = true;
+            _currentlyRecordingTrace = new Trace(TraceOverlayTraceName.Text, (ContextType)TraceOverlayTraceContextType.SelectedIndex);
+
+            TraceOverlay.Visibility = Visibility.Hidden;
         }
+
+        private void DcrEvent_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_traceRecording)
+            {
+                var activity = sender?.GetType().GetProperty("DataContext")?.GetValue(sender, null) as string;
+
+                if (_currentlyRecordingTrace.ActivitySequence.Contains(activity) ||
+                    _currentlyRecordingTrace.Context.ContextActivities.Contains(activity))
+                    return;
+
+                _currentlyRecordingTrace.AddToContext(activity);
+            }
+        }
+
+        private void Trace_Click(object sender, MouseButtonEventArgs e)
+        {
+            var traceWindow = new TraceWindow(Model.Traces.First());
+            traceWindow.ShowDialog();
+        }
+
+        private void TraceOverlayTraceNameOnKeyUp(object sender, KeyEventArgs keyEventArgs)
+        {
+            Console.WriteLine(Model.Traces.Count);
+            if (Model.Traces.Count > 0)
+                Console.WriteLine(Model.Traces.Select(x => x.Name).Aggregate((a, v) => a + Environment.NewLine + v));
+            var text = (sender as TextBox).Text;
+            if (string.IsNullOrWhiteSpace(text) || Model.Traces.Any(x => x.Name.Equals(text)))
+                TraceOverlayDoneButton.IsEnabled = false;
+            else
+                TraceOverlayDoneButton.IsEnabled = true;
+        }
+
     }
 }
