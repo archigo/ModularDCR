@@ -7,22 +7,32 @@ namespace DataLogic.Trace
     public class Context
     {
         public ContextType ContextType { get; set; }
-        public HashSet<string> ContextActivities { get; set; }
+        public List<TraceActivity> ContextActivities { get; set; }
+        public bool Strict { get; set; }
 
-        public Context(ContextType type)
+        public Context(bool strict, ContextType type)
         {
-            switch (type)
+            Strict = strict;
+            switch (strict)
             {
-                case ContextType.All:
+                case true:
                     ContextActivities = null;
                     break;
-                case ContextType.Defined:
-                    ContextActivities = new HashSet<string>();
+                case false:
+                    ContextActivities = new List<TraceActivity>();
                     break;
                 default:
-                    throw new Exception("A contextType case was not handled");
+                    throw new Exception("A context strictness case was not handled");
             }
+
+            ContextType = type;
+        }
+
+        public void AddToContext(string name)
+        {
+            if(ContextActivities != null && !ContextActivities.Exists(x => x.Name.Equals(name)))
+                ContextActivities.Add(new TraceActivity(name));
         }
     }
-    public enum ContextType { All, Defined }
+    public enum ContextType { Local, EventLocal, Global }
 }

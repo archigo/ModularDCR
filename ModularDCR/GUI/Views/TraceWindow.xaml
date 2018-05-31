@@ -7,8 +7,23 @@
         xmlns:models="clr-namespace:GUI.Models"
         d:DataContext="{d:DesignInstance Type=models:TraceWindowModel, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
-        Title="TraceWindow" Height="300" Width="300">
-    <Grid>
-        <TextBox Text="{Binding Trace.Name, Mode=TwoWay}"></TextBox>
-    </Grid>
+        Title="TraceWindow" Height="300" Width="301.245"
+        SizeToContent="WidthAndHeight"
+        MinWidth="300"
+        >
+    <StackPanel>
+        <Label>Activity sequence:</Label>
+        <TextBox TextWrapping="Wrap" Name="TraceSequenceText" Text="A B C"/>
+        <StackPanel Orientation="Horizontal">
+            <Label>Context Strictness</Label>
+            <CheckBox IsHitTestVisible="False" Focusable="False" Name="ContextStrictness"/>
+        </StackPanel>
+        <DataGrid Margin="0,2" AutoGenerateColumns="False" ItemsSource="{Binding Trace.Context.ContextActivities, UpdateSourceTrigger=PropertyChanged}">
+            <DataGrid.Columns>
+                <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="Context" Binding="{Binding Name}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Button Width="100" HorizontalAlignment="Right" Click="TestTrace_Click">Test Trace</Button>
+        <TextBlock TextWrapping="Wrap" Name="TestResult" Visibility="Hidden"/>
+    </StackPanel>
 </Window>

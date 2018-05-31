@@ -1,0 +1,20 @@
+﻿<Window x:Class="GUI.Views.EventsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:GUI.Models"
+        xmlns:local="clr-namespace:GUI.Views"
+        d:DataContext="{d:DesignInstance Type=models:EventsWindownModel, IsDesignTimeCreatable=True}"
+        mc:Ignorable="d"
+        Title="Events" MinHeight="300"  Width="300" Height="Auto">
+    <StackPanel>
+
+        <DataGrid Margin="0,2" Width="Auto" AutoGenerateColumns="False" ItemsSource="{Binding Activities, UpdateSourceTrigger=PropertyChanged}">
+            <DataGrid.Columns>
+                <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="Name" Binding="{Binding Id}"/>
+                <DataGridCheckBoxColumn Width="Auto" Header="Strict" Binding="{Binding Strict}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </StackPanel>
+</Window>

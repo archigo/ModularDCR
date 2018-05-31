@@ -1,9 +1,11 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DataLogic.Trace;
 
 namespace DataLogic.DcrGraph
 {
@@ -13,8 +15,9 @@ namespace DataLogic.DcrGraph
         public bool Executed { get; set; }
         public bool Pending { get; set; }
         public bool Excluded { get; set; }
-        private Relation[] _relationsIncoming;
-        private Relation[] _relationsOutgoing;
+        internal List<Relation> _relationsIncoming;
+        internal List<Relation> _relationsOutgoing;
+        public bool Strict { get; set; } = false;
 
         public int ExecutionCount { get; set; }
 
@@ -33,12 +36,20 @@ namespace DataLogic.DcrGraph
             
         }
 
+        public void ResetStates(ActivityStateHolder activityStateHolder)
+        {
+            Executed = activityStateHolder.Executed;
+            Pending = activityStateHolder.Pending;
+            Excluded = activityStateHolder.Excluded;
+            ExecutionCount = 0;
+        }
+
         /// <summary>
         /// Must only be called once, as part of the graph creation.
         /// </summary>
         /// <param name="relationsIncoming"></param>
         /// <param name="relationsOutgoing"></param>
-        public void SetRelations(Relation[] relationsIncoming, Relation[] relationsOutgoing)
+        public void SetRelations(List<Relation> relationsIncoming, List<Relation> relationsOutgoing)
         {
             _relationsIncoming = relationsIncoming;
             _relationsOutgoing = relationsOutgoing;
@@ -59,7 +70,7 @@ namespace DataLogic.DcrGraph
         public bool Execute()
         {
             if (!IsExecuteable()) return false;
-
+            TraceChecker.TraceExecutedSequence.Add(this);
             Executed = true;
             ExecutionCount++;
 
@@ -73,6 +84,18 @@ namespace DataLogic.DcrGraph
             return Executed;
         }
 
+        public bool TryExecute(bool outside = false)
+        {
+            if (!outside)
+            {
+                var forbidden = TraceChecker.ForbiddenActivities.Exists(x => x.Equals(this.Id));
+                if (forbidden) return false;
+            }
+            if (Execute()) return true;
+            TryMakeExecuteable();
+            return Execute();
+        }
+
         public string ExportRawDcrString()
         {
             var rawDcr = "";
@@ -81,6 +104,67 @@ namespace DataLogic.DcrGraph
             rawDcr += (Pending ? "!" : "") + "\"" + Id + "\"";
 
             return rawDcr;
+        }
+
+        private void TryMakeExecuteable()
+        {
+            if (TraceChecker.CircleActivities.Exists(x => x.Id.Equals(this.Id))) return;
+            var remIndex = TraceChecker.CircleActivities.Count;
+            try
+            {
+            TraceChecker.CircleActivities.Add(this);
+             
+            if (Excluded)
+            {
+                TryInclude();
+                if (!Excluded) return;
+            }
+
+            if (IsExecuteable()) return;
+
+            foreach (var relation in _relationsIncoming.Where(x => x.Type.Equals(Relation.RelationType.Condition) || x.Type.Equals(Relation.RelationType.Milestone)))
+            {
+                relation.From.TryDischarge(relation.Type);
+            }
+            }
+            finally
+            {
+                TraceChecker.CircleActivities.RemoveAt(remIndex);
+            }
+        }
+
+        private void TryDischarge(Relation.RelationType type)
+        {
+            if (!IsBlockingState(type)) return;
+            TryExecute();
+            if (!IsBlockingState(type)) return;
+
+            TryExclude();
+            if (!IsBlockingState(type)) return;
+
+            TryMakeExecuteable();
+            TryExecute();
+        }
+
+        public void TryExclude()
+        {
+            if (Excluded) return;
+
+            foreach (var excludeRelation in _relationsIncoming.Where(x => x.Type.Equals(Relation.RelationType.Exclude)))
+            {
+                excludeRelation.From.TryExecute();
+                if (!Excluded) return;
+            }
+        }
+        private void TryInclude()
+        {
+            if (!Excluded) return;
+
+            foreach (var includeRelation in _relationsIncoming.Where(x => x.Type.Equals(Relation.RelationType.Include)))
+            {
+                includeRelation.From.TryExecute();
+                if (!Excluded) return;
+            }
         }
 
         private void ChangeState(Relation.RelationType type)
@@ -113,5 +197,61 @@ namespace DataLogic.DcrGraph
         {
             return checkValue >= 0 && checkValue <= 1;
         }
+
+
+        public bool IsSafe(DcrGraph safeForDcrGraph)
+        {
+            //acyclic
+            var dependencyGraph = this.BuildDependencyGraph();
+            var cycleChecker = new CycleChecker();
+            var cycle = cycleChecker.ExistsCycleConditionMilestone(dependencyGraph);
+            var cycleResponse = cycleChecker.ExistsCycleResponse(dependencyGraph);
+            if (cycle != null || cycleResponse != null) return false;
+
+            // no include, exclude or response to any activity
+            if (dependencyGraph.Any(x => x._relationsOutgoing.Any(y =>
+                y.Type == Relation.RelationType.Include || y.Type == Relation.RelationType.Exclude ||
+                y.Type == Relation.RelationType.Response))) return false;
+
+            // np-hard? Check any outgoing condition/milestone reachable
+            if (dependencyGraph.Any(x => x._relationsOutgoing.Any(y =>
+                (y.Type == Relation.RelationType.Condition || y.Type == Relation.RelationType.Milestone) &&
+                !ReachableFromTo(y.From, y.To, safeForDcrGraph)))) return false;
+
+            return true;
+
+        }
+
+        private bool ReachableFromTo(Activity from, Activity to, DcrGraph dcrGraph)
+        {
+            var testGraph = new DcrGraph(dcrGraph.EditWindowString, new List<string>(), dcrGraph.EditWindowString, dcrGraph.Name);
+            var testFrom = testGraph.Activities.First(x => x.Id.Equals(from.Id));
+            var testTo = testGraph.Activities.First(x => x.Id.Equals(to.Id));
+
+            var executed = testFrom.TryExecute();
+            if (!executed) return false;
+            executed = testTo.TryExecute();
+            return executed;
+        }
+
+        public List<Activity> BuildDependencyGraph(List<Activity> superDenpendencyGraph = null)
+        {
+            if(superDenpendencyGraph == null) superDenpendencyGraph = new List<Activity>(){this};
+
+            foreach (var inRelation in this._relationsIncoming)
+            {
+                if ((inRelation.Type == Relation.RelationType.Condition ||
+                     inRelation.Type == Relation.RelationType.Milestone || inRelation.Type == Relation.RelationType.Response) &&
+                    !superDenpendencyGraph.Any(x => x.Id.Equals(inRelation.From.Id)))
+                {
+                    superDenpendencyGraph.Add(inRelation.From);
+                    inRelation.From.BuildDependencyGraph(superDenpendencyGraph);
+                }
+
+            }
+
+            return superDenpendencyGraph;
+        }
     }
+
 }

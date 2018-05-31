@@ -18,7 +18,7 @@
         xmlns:controls="clr-namespace:LoadingPanelSample.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=models:MainWindowModel, IsDesignTimeCreatable=True}"
-        Title="MainWindow" Height="698.99" Width="1065.195">
+        Title="MainWindow" Height="698.99" Width="1065.195" MinWidth="1065.195" MinHeight="698.99">
     <Grid>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -27,10 +27,17 @@
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
 
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+                <materialDesign:Card Grid.Row="0" Margin="5" VerticalAlignment="Stretch">
+                    <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0" AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="DcrText" Text="A --&gt;* B" Margin="10,10,10,10" DataContext="{Binding DcrText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="DcrText_TextChanged" FontWeight="DemiBold"/>
+                </materialDesign:Card>
+            </Grid>
 
-            <materialDesign:Card Grid.Column="0" Margin="5" VerticalAlignment="Stretch">
-                <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0" AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="DcrText" Text="A --&gt;* B" Margin="10,10,10,10" DataContext="{Binding DcrText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="DcrText_TextChanged" FontWeight="DemiBold"/>
-            </materialDesign:Card>
+
+            
             <Grid Grid.Column="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
@@ -46,6 +53,8 @@
                             <RowDefinition Height="10*"/>
                         </Grid.RowDefinitions>
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.Row="0" Text="{Binding DcrExplanation, Mode=OneTime}" FontWeight="DemiBold" Opacity="0.7"/>
+
+
                         <utils:ZoomBorder Grid.Row="1" Margin="10,10,10,10">
                             <Image Source="{Binding DcrImage, UpdateSourceTrigger=PropertyChanged}" MouseRightButtonUp="DcrGraphImage_OnMouseRightButtonUp" Margin="0,0,0,0"/>
                         </utils:ZoomBorder>
@@ -80,6 +89,7 @@
                     <RowDefinition Height="1*"/>
                     <RowDefinition Height="33"/>
                     <RowDefinition Height="1*"/>
+                    <RowDefinition Height="33"/>
                 </Grid.RowDefinitions>
 
                 <materialDesign:Card Grid.Row="0" Margin="5" VerticalAlignment="Stretch">
@@ -88,9 +98,16 @@
                             <DataTemplate>
                                 <Grid Margin="0,2">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock MouseLeftButtonUp="Trace_Click" Name="TraceName"  Text="{Binding Name}"  />
+                                    <Label MouseLeftButtonUp="Trace_Click" BorderThickness="2" BorderBrush="Black" Name="TraceName"  Content="{Binding Name}">
+                                        <Label.Background>
+                                            <SolidColorBrush Color="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </Label.Background>
+                                    </Label>
+                                    <Label Grid.Column="1" Height="Auto" HorizontalContentAlignment="Center" Content="{Binding PositiveString, UpdateSourceTrigger=PropertyChanged}" BorderThickness="2" BorderBrush="Black"/>
+
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -100,20 +117,38 @@
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="95"/>
+                        <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
-                    <materialDesign:Card Grid.Column="0" Margin="5,0,0,0" VerticalAlignment="Stretch">
-                        <TextBox Name="TraceNameTextBox" TextWrapping="NoWrap"  HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="10, 0" FontSize="14" TextAlignment="Center" BorderThickness="0,0,0,1" MaxLines="1" BorderBrush="#89979090" AutomationProperties.HelpText="Trace name..." ></TextBox>
-                    </materialDesign:Card>
-                    <Button Grid.Column="1" Name="RecordTrace" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="10,0" Click="RecordTrace_Click">Trace</Button>
+                    <Button Grid.Column="0"  Width="80" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="10,0" Click="ShowEvents_Click">Events</Button>
+                    <Button Grid.Column="1" Width="80" Name="RecordTrace" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="10,0" Click="RecordTrace_Click">Trace</Button>
                 </Grid>
 
                 <materialDesign:Card Grid.Row="2" Margin="5" VerticalAlignment="Stretch">
-                    <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0" AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="NotUsedYet" Text="A --&gt;* B" Margin="10,10,10,10" DataContext="{Binding DcrText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextChanged="DcrText_TextChanged" FontWeight="DemiBold"/>
+                    <ListBox Name="GraphList" HorizontalContentAlignment="Stretch" ItemsSource="{Binding StoredDcrGraphs, UpdateSourceTrigger=PropertyChanged}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*" />
+                                        <ColumnDefinition Width="2.5*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{Binding Name}"/>
+                                    <Button Grid.Column="1" Click="SelectDcrGraph_Click"  Width="Auto">Select</Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </materialDesign:Card>
+
+
+                <Button Grid.Row="3" Width="Auto" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0" Click="AddGraph_Click">Add graph</Button>
+                <Button Grid.Row="3" Width="Auto" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0" Click="Merge_Click">Merge</Button>
+
+
             </Grid>
         </Grid>
         <DockPanel x:Name="TraceOverlay" Panel.ZIndex="1000" Visibility="Hidden">
+            <!-- -->
             <DockPanel.Background>
                 <SolidColorBrush Color="Black" Opacity=".5"/>
             </DockPanel.Background>
@@ -122,7 +157,9 @@
                     <DockPanel HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="5">
                         <StackPanel Orientation="Vertical" Width="90">
                             <Label>Name</Label>
+                            <Label>Positive</Label>
                             <Label>Context Type</Label>
+                            <Label>Strictness</Label>
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" MinWidth="100">
                             <TextBox Name="TraceOverlayTraceName" KeyUp="TraceOverlayTraceNameOnKeyUp" HorizontalAlignment="Stretch" TextAlignment="Center">
@@ -130,10 +167,13 @@
                                     <TextBlock  TextAlignment="Center" VerticalAlignment="Center">Name...</TextBlock>
                                 </utils:WatermarkService.Watermark>
                             </TextBox>
+                            <CheckBox Height="26" HorizontalAlignment="Center" Name="TraceOverlayTracePositive" IsChecked="True"/>
                             <ComboBox Name="TraceOverlayTraceContextType" SelectedIndex="0">
-                                <ComboBoxItem>All</ComboBoxItem>
-                                <ComboBoxItem>Defined</ComboBoxItem>
+                                <ComboBoxItem>Local</ComboBoxItem>
+                                <ComboBoxItem>Event local</ComboBoxItem>
+                                <ComboBoxItem>Global</ComboBoxItem>
                             </ComboBox>
+                            <CheckBox Height="26" HorizontalAlignment="Center" Name="TraceOverlayTraceStrictness" IsChecked="False"/>
                         </StackPanel>
                     </DockPanel>
                     <Button Name="TraceOverlayDoneButton" Width="70" HorizontalAlignment="Right" Margin="5" Click="ButtonTraceOverlayDone_Click" IsEnabled="False">Done</Button>
@@ -143,7 +183,7 @@
             <!-- Add controls as needed -->
         </DockPanel>
     </Grid>
-    
+
 
 </Window>
 

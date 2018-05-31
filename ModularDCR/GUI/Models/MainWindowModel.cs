@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using DataLogic.DcrGraph;
 using DataLogic.Trace;
 using GUI.Annotations;
 
@@ -17,8 +18,37 @@ namespace GUI.Models
         private DrawingImage _dcrImage;
         private string _dcrText = "\"Some Activity\" -->* \"Some Other Activity\"";
         private ObservableCollection<string> _events = new ObservableCollection<string> { "Some Activity", "Some Other Activity"};
-        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace("Test",ContextType.All){ActivitySequence = new List<string>(), Recorded = DateTime.Now, Status = true}};
+        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace("Test",ContextType.Local, false, true){ActivitySequence = new List<string>(), Recorded = DateTime.Now, Status = true}};
         private string _traceOverlayTaceName = "";
+        private ObservableCollection<DcrGraphContainer> _storedDcrGraphs = new ObservableCollection<DcrGraphContainer>();
+        private string _statusText;
+        public string CurrentGraphName { get; set; }
+
+        public string StatusText
+        {
+            get => _statusText;
+            set
+            {
+                if (value == _statusText) return;
+                _statusText = value;
+                OnPropertyChanged(nameof(StatusText));
+            }
+        }
+
+        public ObservableCollection<DcrGraphContainer> StoredDcrGraphs
+        {
+            get => _storedDcrGraphs;
+            set
+            {
+                _storedDcrGraphs = value;
+                OnPropertyChanged(nameof(StoredDcrGraphs));
+            }
+        }
+
+        public void SimulateOnPropertyChanged()
+        {
+            OnPropertyChanged();
+        }
 
         public ObservableCollection<Trace> Traces
         {

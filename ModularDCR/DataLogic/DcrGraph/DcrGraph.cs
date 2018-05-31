@@ -9,20 +9,55 @@ namespace DataLogic.DcrGraph
 {
     public class DcrGraph
     {
-
         private readonly List<Activity> _activities = new List<Activity>();
         private readonly List<Relation> _relations = new List<Relation>();
+        public string Name { get; set; }
+        public string EditWindowString { get; set; }
+        public List<Trace.Trace> StoredTraces { get; set; } = new List<Trace.Trace>();
+        private List<ActivityStateHolder> InitialActivityStates { get; set; } = new List<ActivityStateHolder>();
 
-        public DcrGraph(string rawDcr)
+        public List<string> StrictActivities
         {
+            get { return _activities.Where(x => x.Strict).Select(x => x.Id).ToList(); }
+            
+        }
+
+        public List<Activity> Activities => _activities;  
+
+        public DcrGraph(string rawDcr, List<string> strictActivities, string editWindowString, string name)
+        {
+            Name = name;
+            EditWindowString = editWindowString;
             ParseRawDcr(rawDcr);
+            if (strictActivities != null)
+            {
+                foreach (var strictActivity in strictActivities)
+                {
+                    var activity = _activities.FirstOrDefault(x => x.Id.Equals(strictActivity));
+                    if (activity != null) activity.Strict = true;
+                }
+            }
+
+            foreach (var activity in Activities)
+            {
+                InitialActivityStates.Add(new ActivityStateHolder(activity));
+            }
         }
 
         #region Public Methods
 
+        public void ResetGraphState()
+        {
+            foreach (var initialActivityState in InitialActivityStates)
+            {
+                var activity = Activities.First(x => x.Id.Equals(initialActivityState.Id));
+
+            }
+        }
+
         public string[] GetActivityNames() => _activities.Count == 0 ? default(string[]) : _activities.Select(x => x.Id).ToArray();
 
-        public string[] GetExecutableActivityNames() => _activities.Count == 0 ? default(string[]) : _activities.Where(a => a.IsExecuteable()).Select(a => a.Id).ToArray();
+        public string[] GetExecutableActivityNames() => _activities.Count == 0 ? new string[0] : _activities.Where(a => a.IsExecuteable()).Select(a => a.Id).ToArray();
 
         public bool ExecuteActivity(string id)
         {
@@ -49,6 +84,11 @@ namespace DataLogic.DcrGraph
             }
 
             return rawDcr;
+        }
+
+        public Activity GetActivityByName(string name)
+        {
+            return _activities.FirstOrDefault(x => x.Id.Equals(name));
         }
 
         #endregion
@@ -79,7 +119,7 @@ namespace DataLogic.DcrGraph
 
             foreach (var activity in _activities)
             {
-                activity.SetRelations(_relations.Where(r => r.To.Id.Equals(activity.Id)).ToArray(), _relations.Where(r => r.From.Id.Equals(activity.Id)).ToArray());
+                activity.SetRelations(_relations.Where(r => r.To.Id.Equals(activity.Id)).ToList(), _relations.Where(r => r.From.Id.Equals(activity.Id)).ToList());
             }
         }
 
@@ -112,5 +152,111 @@ namespace DataLogic.DcrGraph
         }
 
         #endregion
+
+        public void TakeEventLocalActivities(DcrGraph graphToMerge)
+        {
+            var sharedActivities = graphToMerge.Activities.Where(x => Activities.Exists(y => y.Id.Equals(x.Id))).ToList();
+
+            foreach (var sharedActivity in sharedActivities)
+            {
+                var localActivity = Activities.First(x => x.Id.Equals(sharedActivity.Id));
+
+                localActivity.Excluded = sharedActivity.Excluded || localActivity.Excluded;
+                localActivity.Pending = sharedActivity.Pending || localActivity.Pending;
+                localActivity.Executed = sharedActivity.Executed || localActivity.Executed;
+
+                foreach (var relation in sharedActivity._relationsIncoming)
+                {
+                    // from activity must exist in the local graph. The relation must not already exist.
+                    if (Activities.Exists(x => x.Id.Equals(relation.From.Id)) && !localActivity._relationsIncoming.Any(x => x.Type.Equals(relation.Type) && x.From.Id.Equals(relation.From.Id)))
+                    {
+                        var localFrom = Activities.First(x => x.Id.Equals(relation.From.Id));
+                        localActivity._relationsIncoming.Add(new Relation(localFrom, localActivity, (int) relation.Type));
+                    }
+                }
+
+                foreach (var relation in sharedActivity._relationsOutgoing)
+                {
+                    // "to" activity must exist in the local graph. The relation must not already exist.
+                    if (Activities.Exists(x => x.Id.Equals(relation.To.Id)) && !localActivity._relationsOutgoing.Exists(x => x.Type.Equals(relation.Type) && x.From.Id.Equals(relation.From.Id)))
+                    {
+                        var localTo = Activities.First(x => x.Id.Equals(relation.To.Id));
+                        localActivity._relationsOutgoing.Add(new Relation(localActivity, localTo, (int)relation.Type));
+                    }
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// Null if transparent, otherwise return first relation that breaks.
+        /// </summary>
+        /// <param name="dcrGraph"></param>
+        /// <returns></returns>
+        public Tuple<Activity,Relation> IsTransparent(DcrGraph dcrGraph)
+        {
+            var dcrstring = EditWindowString + "\r\n" + dcrGraph.EditWindowString;
+            var mergedGraph = new DcrGraph(dcrstring, new List<string>(), dcrstring, "tempMerge");
+            var newRelations = new List<Relation>();
+
+            foreach (var newRelation in dcrGraph._relations)
+            {
+                if(RelationExists(newRelation)) continue;
+                newRelations.Add(newRelation);
+            }
+
+            foreach (var mergedActivity in mergedGraph.Activities)
+            {
+                var oldActivity = Activities.FirstOrDefault(x => x.Id.Equals(mergedActivity.Id));
+                //preserve marking
+                if (oldActivity != null && oldActivity.Excluded != mergedActivity.Excluded && oldActivity.Pending != mergedActivity.Pending && oldActivity.Executed != mergedActivity.Executed)
+                {
+                    return new Tuple<Activity, Relation>(mergedActivity, null);
+                }
+                // no new pending
+                if (mergedActivity.Pending) return new Tuple<Activity, Relation>(mergedActivity, null);
+            }
+
+            foreach (var newRelation in newRelations)
+            {
+                switch (newRelation.Type)
+                {
+                    case Relation.RelationType.Include:
+                        // not between old
+                        if(Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+
+                        //no old to new
+                        if(Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && !Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+
+                        // Includes to old must exists beforehand
+                        if (Activities.Any(x => x.Id.Equals(newRelation.To.Id)) && !_relations.Any(x => x.Type == Relation.RelationType.Include && x.From.Id.Equals(newRelation.From.Id) && x.To.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        break;
+                    case Relation.RelationType.Exclude:
+                        // not between old
+                        if (Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        // Excludes to old must exists beforehand
+                        if(Activities.Any(x => x.Id.Equals(newRelation.To.Id)) && !_relations.Any(x => x.Type == Relation.RelationType.Exclude && x.From.Id.Equals(newRelation.From.Id) && x.To.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        break;
+                    case Relation.RelationType.Response:
+                        // not between old
+                        if (Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        //no old to new
+                        if (Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && !Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        break;
+                    case Relation.RelationType.Condition:
+                    case Relation.RelationType.Milestone:
+                        //must not add from old activities
+                        if(Activities.Any(x => x.Id.Equals(newRelation.From.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        // Can only add from new if new is safe
+                        if(Activities.Any(x => x.Id.Equals(newRelation.To.Id) && !mergedGraph.Activities.First(y => y.Id.Equals(newRelation.From.Id)).IsSafe(mergedGraph))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        break;
+                }
+            }
+
+            return new Tuple<Activity, Relation>(null, null);
+        }
+
+        private bool RelationExists(Relation relation) => this._relations.Any(x =>
+                x.From.Id.Equals(relation.From.Id) && x.Type.Equals(relation.Type) && x.To.Id.Equals(relation.To.Id));
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -30,11 +31,18 @@ namespace GUI.Views
         private bool _traceRecording = false;
         private Trace _currentlyRecordingTrace;
 
+
+
         public MainWindow()
         {
             InitializeComponent();
+
+            string name = PromptDialog.Prompt("Name your first dcrgraph", "Confirm");
+
             Model = new MainWindowModel();
             Model.Traces.Clear();
+            Model.CurrentGraphName = name;
+            Model.StoredDcrGraphs.Add(new DcrGraphContainer() { Name = Model.CurrentGraphName });
             this.DataContext = Model;
 
             Loaded += OnLoaded;
@@ -47,7 +55,7 @@ namespace GUI.Views
             //RebuildDcr(Model.DcrText);
         }
 
-        private async void RebuildDcr(string rawDcr, bool buildInMemoryDcr = true)
+        private async void RebuildDcr(string rawDcr, string editWindowString, bool buildInMemoryDcr = true)
         {
             var dcrGraph = _dcrGraph;
             try
@@ -69,10 +77,10 @@ namespace GUI.Views
 
                 if (buildInMemoryDcr)
                 {
-                    dcrGraph = new DcrGraph(rawDcr);
+                    dcrGraph = new DcrGraph(rawDcr, dcrGraph?.StrictActivities, editWindowString, Model.CurrentGraphName);
                 }
             }
-            catch
+            catch (Exception e)
             {
                 return;
             }
@@ -88,7 +96,18 @@ namespace GUI.Views
 
         private void DcrText_TextChanged(object sender, TextChangedEventArgs e)
         {
-            RebuildDcr(DcrText.Text);
+            RebuildDcr(DcrText.Text, DcrText.Text);
+            TestAll();
+        }
+
+        private void TestAll()
+        {
+            if (Model?.Traces is null) return;
+            foreach (var trace in Model.Traces)
+            {
+                RebuildDcr(DcrText.Text, DcrText.Text);
+                trace.CheckTrace(_dcrGraph);
+            }
         }
 
         private void DcrEvent_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -96,7 +115,7 @@ namespace GUI.Views
             var activity = sender?.GetType().GetProperty("DataContext")?.GetValue(sender, null) as string;
             if (_dcrGraph.ExecuteActivity(activity))
             {
-                RebuildDcr(_dcrGraph.ExportRawDcrString());
+                RebuildDcr(_dcrGraph.ExportRawDcrString(), DcrText.Text);
                 if (_traceRecording)
                 {
                     _currentlyRecordingTrace.RecordActivityExecution(activity);
@@ -106,7 +125,7 @@ namespace GUI.Views
 
         private void DcrGraphImage_OnMouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            RebuildDcr(DcrText.Text, true);
+            RebuildDcr(DcrText.Text, DcrText.Text, true);
         }
 
         private void RecordTrace_Click(object sender, RoutedEventArgs e)
@@ -143,9 +162,9 @@ namespace GUI.Views
 
         private void ButtonTraceOverlayDone_Click(object sender, RoutedEventArgs e)
         {
-
+            RebuildDcr(DcrText.Text, DcrText.Text);
             _traceRecording = true;
-            _currentlyRecordingTrace = new Trace(TraceOverlayTraceName.Text, (ContextType)TraceOverlayTraceContextType.SelectedIndex);
+            _currentlyRecordingTrace = new Trace(TraceOverlayTraceName.Text, (ContextType)TraceOverlayTraceContextType.SelectedIndex, TraceOverlayTraceStrictness.IsChecked != null && (bool)TraceOverlayTraceStrictness.IsChecked, TraceOverlayTracePositive.IsChecked != null && (bool)TraceOverlayTracePositive.IsChecked);
 
             TraceOverlay.Visibility = Visibility.Hidden;
         }
@@ -156,9 +175,9 @@ namespace GUI.Views
             {
                 var activity = sender?.GetType().GetProperty("DataContext")?.GetValue(sender, null) as string;
 
-                if (_currentlyRecordingTrace.ActivitySequence.Contains(activity) ||
-                    _currentlyRecordingTrace.Context.ContextActivities.Contains(activity))
-                    return;
+                //if (_currentlyRecordingTrace.ActivitySequence.Contains(activity) ||
+                //    _currentlyRecordingTrace.Context.ContextActivities.Contains(activity))
+                //    return;
 
                 _currentlyRecordingTrace.AddToContext(activity);
             }
@@ -166,7 +185,8 @@ namespace GUI.Views
 
         private void Trace_Click(object sender, MouseButtonEventArgs e)
         {
-            var traceWindow = new TraceWindow(Model.Traces.First());
+            RebuildDcr(DcrText.Text, DcrText.Text);
+            var traceWindow = new TraceWindow(Model.Traces.First(x => x.Name.Equals(((Label)sender).Content)), _dcrGraph);
             traceWindow.ShowDialog();
         }
 
@@ -176,11 +196,79 @@ namespace GUI.Views
             if (Model.Traces.Count > 0)
                 Console.WriteLine(Model.Traces.Select(x => x.Name).Aggregate((a, v) => a + Environment.NewLine + v));
             var text = (sender as TextBox).Text;
-            if (string.IsNullOrWhiteSpace(text) || Model.Traces.Any(x => x.Name.Equals(text)))
+
+            if (string.IsNullOrWhiteSpace(text) || Model.Traces.Any(x => x.Name.Equals(text)) || Model.StoredDcrGraphs.Any(x => x.DcrGraph != null && x.DcrGraph.StoredTraces.Any(y => y.Name.Equals(text))))
                 TraceOverlayDoneButton.IsEnabled = false;
             else
                 TraceOverlayDoneButton.IsEnabled = true;
         }
 
+        private void ShowEvents_Click(object sender, RoutedEventArgs e)
+        {
+            var eventsWindow = new EventsWindow(_dcrGraph.Activities);
+            eventsWindow.ShowDialog();
+        }
+
+        private void SelectDcrGraph_Click(object sender, RoutedEventArgs e)
+        {
+            Button button = sender as Button;
+            DcrGraphContainer dcrGraphContainer = button.DataContext as DcrGraphContainer;
+
+            LoadNewGraph(dcrGraphContainer.Name);
+        }
+
+        private void StoreCurrentGraph()
+        {
+            var dcrGraph = new DcrGraph(DcrText.Text, _dcrGraph.StrictActivities, DcrText.Text, Model.CurrentGraphName);
+            dcrGraph.StoredTraces = Model.Traces.ToList();
+            Model.StoredDcrGraphs[Model.StoredDcrGraphs.IndexOf(Model.StoredDcrGraphs.First(x => x.Name.Equals(Model.CurrentGraphName)))].DcrGraph = dcrGraph;
+        }
+
+        private void LoadNewGraph(string dcrGraphName)
+        {
+            StoreCurrentGraph();
+            var dcrGraph = Model.StoredDcrGraphs.FirstOrDefault(x => x.Name.Equals(dcrGraphName))?.DcrGraph ??
+                           _dcrGraph;
+            Model.CurrentGraphName = dcrGraph.Name;
+            Model.Traces.Clear();
+            Model.Traces = new ObservableCollection<Trace>(dcrGraph.StoredTraces);
+            DcrText.Text = dcrGraph.EditWindowString;
+            _dcrGraph = dcrGraph;
+            RebuildDcr(DcrText.Text, DcrText.Text);
+            TestAll();
+        }
+
+        private void AddGraph_Click(object sender, RoutedEventArgs e)
+        {
+            string name;
+            do
+            {
+                name = PromptDialog.Prompt("Name your new dcrgraph", "Confirm");
+            } while (Model.StoredDcrGraphs.Any(x => x.Name.Equals(name)));
+
+            var dcrGraph = new DcrGraph("\"A new graph\"", null, "\"A new graph\"", name);
+            Model.StoredDcrGraphs.Add(new DcrGraphContainer() { DcrGraph = dcrGraph, Name = name });
+
+            LoadNewGraph(dcrGraph.Name);
+        }
+
+        private void Merge_Click(object sender, RoutedEventArgs e)
+        {
+            MergeGraph();
+        }
+
+        private void MergeGraph()
+        {
+            try
+            {
+                StoreCurrentGraph();
+                var mergeWindow = new GraphMergeWindow(Model.StoredDcrGraphs.Select(x => x.DcrGraph).ToList());
+                mergeWindow.ShowDialog();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
     }
 }

@@ -127,6 +127,8 @@
     <Compile Include="Controls\CircularProgressBar.xaml.cs">
       <DependentUpon>CircularProgressBar.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\EventsWindownModel.cs" />
+    <Compile Include="Models\GraphMergeWindowModel.cs" />
     <Compile Include="Models\MainWindowModel.cs" />
     <Compile Include="Models\SuperModel.cs" />
     <Compile Include="Models\TraceWindowModel.cs" />
@@ -134,12 +136,32 @@
     <Compile Include="Utils\DcrToSvg.cs" />
     <Compile Include="Utils\WatermarkService.cs" />
     <Compile Include="Utils\ZoomBorder.cs" />
+    <Compile Include="Views\EventsWindow.xaml.cs">
+      <DependentUpon>EventsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\GraphMergeWindow.xaml.cs">
+      <DependentUpon>GraphMergeWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PreservationResultsWindow.xaml.cs">
+      <DependentUpon>PreservationResultsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PromptDialog.xaml.cs">
+      <DependentUpon>PromptDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\TraceWindow.xaml.cs">
       <DependentUpon>TraceWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="Controls\CircularProgressBar.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\EventsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\GraphMergeWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -153,6 +175,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\PreservationResultsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\PromptDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\TraceWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

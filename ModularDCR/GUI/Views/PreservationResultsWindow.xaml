@@ -1,0 +1,15 @@
+﻿<Window x:Class="GUI.Views.PreservationResultsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUI.Views"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="PreservationResultsWindow" Height="300" Width="300">
+    <Grid>
+        <materialDesign:Card Grid.Row="0" Margin="5" VerticalAlignment="Stretch">
+            <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0" AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="ResultTest" Text="A --&gt;* B" Margin="10,10,10,10" FontWeight="DemiBold"/>
+        </materialDesign:Card>
+    </Grid>
+</Window>
