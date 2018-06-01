@@ -69,7 +69,7 @@ namespace DataLogic.DcrGraph
                         if (breakable) continue;
                         var cycle = cycles[index];
                         if (cycle.All(x =>
-                            !x.Pending && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Response)))
+                            !x.Pending && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Response) && dcrGraph.Activities.All(y => !y.Pending)))
                             cyclesBreakAble[index] = true;
                     }
 
