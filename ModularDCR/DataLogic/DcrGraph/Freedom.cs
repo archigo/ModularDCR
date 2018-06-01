@@ -118,9 +118,9 @@ namespace DataLogic.DcrGraph
                         {
                             foreach (var activity in possiblyPending)
                             {
-                                var graphWithNoRelationsToActivityBeingTested = new DcrGraph(dcrGraph.EditWindowString, new List<string>(), dcrGraph.EditWindowString, "graphWithNoRelationsToActivityBeingTested");
+                                var graphWithNoExcludeToActivityBeingTested = new DcrGraph(dcrGraph.EditWindowString, new List<string>(), dcrGraph.EditWindowString, "graphWithNoRelationsToActivityBeingTested");
                                 var perhapsSafeActivity =
-                                    graphWithNoRelationsToActivityBeingTested.Activities.Where(x =>
+                                    graphWithNoExcludeToActivityBeingTested.Activities.Where(x =>
                                         x._relationsOutgoing.Any(y => y.To.Id.Equals(activity.Id) && y.Type == Relation.RelationType.Exclude)).ToList();
 
                                 foreach (var activity1 in perhapsSafeActivity)
@@ -130,12 +130,16 @@ namespace DataLogic.DcrGraph
                                 }
 
                                 var anySafeExlude = perhapsSafeActivity.Any(x =>
-                                    x.IsSafe(graphWithNoRelationsToActivityBeingTested) && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Exclude));
+                                    x.IsSafe(graphWithNoExcludeToActivityBeingTested) && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Exclude));
 
                                 if (!(activity.Excluded || anySafeExlude))
                                 {
                                     noDead.Add(false);
                                     break;
+                                }
+                                else
+                                {
+                                    noDead.Add(true);
                                 }
                             }
                             //noDead.Add(true);
@@ -157,16 +161,19 @@ namespace DataLogic.DcrGraph
                 {
                     foreach (var liveCycle in liveCycles)
                     {
+                        // all safe
                         if (liveCycle.All(x => x.IsSafe(dcrGraph)))
                         {
                             noLive.Add(true);
                             continue;
                         }
+                        
 
+                        // exist always excluded never included in circle
                         if (liveCycle.Any(x =>
-                            x.Excluded ||
+                            (x.Excluded && x._relationsIncoming.All(y => y.Type == Relation.RelationType.Include )) ||
                             x._relationsIncoming.Any(y =>
-                                y.Type == Relation.RelationType.Exclude && y.From.IsSafe(dcrGraph) &&
+                                y.Type == Relation.RelationType.Exclude && y.From.IsSafe(CreateXE(dcrGraph, y.From)) &&
                                 y.From._relationsIncoming.All(z => z.Type != Relation.RelationType.Exclude)) &&
                             x._relationsIncoming.All(c => c.Type != Relation.RelationType.Include)))
                         {
@@ -185,6 +192,22 @@ namespace DataLogic.DcrGraph
                     }
                 }
             }
+        }
+
+        private DcrGraph CreateXE(DcrGraph dcrGraph, Activity e)
+        {
+            var graphWithNoExcludeToActivityBeingTested = new DcrGraph(dcrGraph.EditWindowString, new List<string>(), dcrGraph.EditWindowString, "graphWithNoRelationsToActivityBeingTested");
+            var perhapsSafeActivity =
+                graphWithNoExcludeToActivityBeingTested.Activities.Where(x =>
+                    x._relationsOutgoing.Any(y => y.To.Id.Equals(e.Id) && y.Type == Relation.RelationType.Exclude)).ToList();
+
+            foreach (var activity1 in perhapsSafeActivity)
+            {
+                activity1._relationsOutgoing.Remove(activity1._relationsOutgoing.First(x =>
+                    x.Type == Relation.RelationType.Exclude && x.To.Id.Equals(e.Id)));
+            }
+
+            return graphWithNoExcludeToActivityBeingTested;
         }
 
         private void CreateRelatedGraph()
