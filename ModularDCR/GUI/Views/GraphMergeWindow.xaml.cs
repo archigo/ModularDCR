@@ -129,7 +129,7 @@ namespace GUI.Views
 
         private void ShowFreedom_Click(object sender, RoutedEventArgs e)
         {
-            var window = new PreservationResultsWindow(Model.GraphMerge.Freedom);
+            var window = new FreedomWindow(Model.GraphMerge.Freedom);
             window.ShowDialog();
         }
     }

@@ -14,6 +14,7 @@ namespace DataLogic.Trace
         public List<string> ActivitySequence { get; set; } = new List<string>();
         public DateTime Recorded { get; set; } = DateTime.Now;
         public string Name { get; set; }
+        public bool TrackAccepting { get; set; }
 
         public bool Status
         {
@@ -34,11 +35,12 @@ namespace DataLogic.Trace
 
         public Color BackgroundColor => Status ? Colors.Green : Colors.Red;
 
-        public Trace(string name, ContextType type, bool strict, bool positive)
+        public Trace(string name, ContextType type, bool strict, bool positive, bool trackAccepting)
         {
             Name = string.IsNullOrEmpty(name) ? DateTime.Now.ToString("g") : name;
             Context = new Context(strict, type);
             Positive = positive;
+            TrackAccepting = trackAccepting;
         }
 
         public void RecordActivityExecution(string activity)
@@ -56,10 +58,21 @@ namespace DataLogic.Trace
         {
             Status = false;
             var pass = new TraceChecker().CheckTrace(this, dcrGraph);
-            if ((Positive && pass) || (!Positive && !pass))
+            if (TrackAccepting)
             {
-                Status = true;
+                if ((Positive && pass) || (!Positive && !pass))
+                {
+                    Status = true;
+                }
             }
+            else
+            {
+                if ((Positive && pass) || (!Positive && !pass))
+                {
+                    Status = true;
+                }
+            }
+            
 
             return Status;
         }

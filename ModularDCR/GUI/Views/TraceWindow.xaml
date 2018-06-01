@@ -15,8 +15,12 @@
         <Label>Activity sequence:</Label>
         <TextBox TextWrapping="Wrap" Name="TraceSequenceText" Text="A B C"/>
         <StackPanel Orientation="Horizontal">
-            <Label>Context Strictness</Label>
+            <Label Width="110">Context Strictness</Label>
             <CheckBox IsHitTestVisible="False" Focusable="False" Name="ContextStrictness"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Label Width="110">Track accepeting</Label>
+            <CheckBox IsHitTestVisible="False" Focusable="False" Name="TrackAccepeting"/>
         </StackPanel>
         <DataGrid Margin="0,2" AutoGenerateColumns="False" ItemsSource="{Binding Trace.Context.ContextActivities, UpdateSourceTrigger=PropertyChanged}">
             <DataGrid.Columns>

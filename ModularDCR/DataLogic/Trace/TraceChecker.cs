@@ -10,8 +10,8 @@ namespace DataLogic.Trace
     public class TraceChecker
     {
         public static List<Activity> TraceExecutedSequence = new List<Activity>();
-        public static List<string> ForbiddenActivities;
-        public static List<Activity> CircleActivities;
+        public static List<string> ForbiddenActivities = new List<string>();
+        public static List<Activity> CircleActivities = new List<Activity>();
 
         public Trace Trace { get; set; }
         public DcrGraph.DcrGraph DcrGraph { get; set; }
@@ -56,6 +56,11 @@ namespace DataLogic.Trace
             foreach (var activity in TraceExecutedSequence)
             {
                 Trace.AcceptingTrace.Add(activity.Id);
+            }
+
+            if (Trace.TrackAccepting)
+            {
+                return dcrGraph.IsAccepting();
             }
 
             return true;

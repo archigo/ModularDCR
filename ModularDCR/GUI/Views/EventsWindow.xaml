@@ -7,13 +7,21 @@
         xmlns:local="clr-namespace:GUI.Views"
         d:DataContext="{d:DesignInstance Type=models:EventsWindownModel, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
-        Title="Events" MinHeight="300"  Width="300" Height="Auto">
+        Title="Events" MinHeight="300"  Width="Auto" Height="Auto" d:DesignWidth="426.993">
     <StackPanel>
 
         <DataGrid Margin="0,2" Width="Auto" AutoGenerateColumns="False" ItemsSource="{Binding Activities, UpdateSourceTrigger=PropertyChanged}">
             <DataGrid.Columns>
                 <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="Name" Binding="{Binding Id}"/>
                 <DataGridCheckBoxColumn Width="Auto" Header="Strict" Binding="{Binding Strict}"/>
+
+                <DataGridTemplateColumn>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Width="Auto" Click="AddEventToContext_Click">Add to trace context</Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </StackPanel>

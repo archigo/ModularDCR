@@ -155,11 +155,12 @@
             <materialDesign:Card VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <DockPanel HorizontalAlignment="Stretch" VerticalAlignment="Top" Margin="5">
-                        <StackPanel Orientation="Vertical" Width="90">
+                        <StackPanel Orientation="Vertical" Width="100">
                             <Label>Name</Label>
                             <Label>Positive</Label>
                             <Label>Context Type</Label>
                             <Label>Strictness</Label>
+                            <Label>Track Accepting</Label>
                         </StackPanel>
                         <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" MinWidth="100">
                             <TextBox Name="TraceOverlayTraceName" KeyUp="TraceOverlayTraceNameOnKeyUp" HorizontalAlignment="Stretch" TextAlignment="Center">
@@ -174,6 +175,7 @@
                                 <ComboBoxItem>Global</ComboBoxItem>
                             </ComboBox>
                             <CheckBox Height="26" HorizontalAlignment="Center" Name="TraceOverlayTraceStrictness" IsChecked="False"/>
+                            <CheckBox Height="26" HorizontalAlignment="Center" Name="TraceOverlayTraceTrackAccepting" IsChecked="True"/>
                         </StackPanel>
                     </DockPanel>
                     <Button Name="TraceOverlayDoneButton" Width="70" HorizontalAlignment="Right" Margin="5" Click="ButtonTraceOverlayDone_Click" IsEnabled="False">Done</Button>

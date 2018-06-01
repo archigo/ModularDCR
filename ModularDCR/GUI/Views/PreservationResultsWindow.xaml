@@ -5,11 +5,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:GUI.Views"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="PreservationResultsWindow" Height="300" Width="300">
     <Grid>
         <materialDesign:Card Grid.Row="0" Margin="5" VerticalAlignment="Stretch">
-            <TextBox Style="{DynamicResource MaterialDesignTitleTextBox}" BorderThickness="0" AcceptsTab="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Name="ResultTest" Text="A --&gt;* B" Margin="10,10,10,10" FontWeight="DemiBold"/>
+            <DataGrid Margin="0,2" Width="Auto" AutoGenerateColumns="False" Name="DataGrid" >
+                <DataGrid.Columns>
+                    <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="Activity" Binding="{Binding Item1.Id}"/>
+                    <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="From" Binding="{Binding Item2.From.Id}"/>
+                    <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="Relation" Binding="{Binding Item2.Type}"/>
+                    <DataGridTextColumn IsReadOnly="True" Width="Auto" Header="To" Binding="{Binding Item2.To.Id}"/>
+                </DataGrid.Columns>
+            </DataGrid>
         </materialDesign:Card>
     </Grid>
 </Window>

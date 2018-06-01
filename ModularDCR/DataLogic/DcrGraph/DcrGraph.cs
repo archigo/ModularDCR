@@ -258,5 +258,10 @@ namespace DataLogic.DcrGraph
 
         private bool RelationExists(Relation relation) => this._relations.Any(x =>
                 x.From.Id.Equals(relation.From.Id) && x.Type.Equals(relation.Type) && x.To.Id.Equals(relation.To.Id));
+
+        public bool IsAccepting()
+        {
+            return !Activities.Any(x => x.Pending);
+        }
     }
 }

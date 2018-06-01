@@ -88,8 +88,8 @@ namespace DataLogic.DcrGraph
         {
             if (!outside)
             {
-                var forbidden = TraceChecker.ForbiddenActivities.Exists(x => x.Equals(this.Id));
-                if (forbidden) return false;
+                var forbidden = TraceChecker.ForbiddenActivities?.Exists(x => x.Equals(this.Id));
+                if (forbidden ?? false) return false;
             }
             if (Execute()) return true;
             TryMakeExecuteable();

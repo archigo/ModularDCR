@@ -38,6 +38,7 @@ namespace GUI.Views
             }
             this.TraceSequenceText.Text = res;
             ContextStrictness.IsChecked = Model.Trace.Context.Strict;
+            TrackAccepeting.IsChecked = Model.Trace.TrackAccepting;
         }
 
         private void TestTrace_Click(object sender, RoutedEventArgs e)

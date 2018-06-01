@@ -18,7 +18,7 @@ namespace GUI.Models
         private DrawingImage _dcrImage;
         private string _dcrText = "\"Some Activity\" -->* \"Some Other Activity\"";
         private ObservableCollection<string> _events = new ObservableCollection<string> { "Some Activity", "Some Other Activity"};
-        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace("Test",ContextType.Local, false, true){ActivitySequence = new List<string>(), Recorded = DateTime.Now, Status = true}};
+        private ObservableCollection<Trace> _traces = new ObservableCollection<Trace>(){ new Trace("Test",ContextType.Local, false, true, true){ActivitySequence = new List<string>(), Recorded = DateTime.Now, Status = true}};
         private string _traceOverlayTaceName = "";
         private ObservableCollection<DcrGraphContainer> _storedDcrGraphs = new ObservableCollection<DcrGraphContainer>();
         private string _statusText;

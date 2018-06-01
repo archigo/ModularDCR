@@ -1,0 +1,14 @@
+﻿<Window x:Class="GUI.Views.selectTrace"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUI.Views"
+        mc:Ignorable="d"
+        Title="selectTrace" Height="125" Width="210">
+    <StackPanel Width="Auto" Orientation="Vertical" HorizontalAlignment="Left">
+        <Label HorizontalContentAlignment="Center">Select trace</Label>
+        <ComboBox Width="200" SelectedIndex="0" Name="cbTrace"></ComboBox>
+        <Button Width="60" Click="ButtonBase_OnClick" Margin="5">Add</Button>
+    </StackPanel>
+</Window>

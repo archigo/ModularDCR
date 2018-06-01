@@ -139,6 +139,9 @@
     <Compile Include="Views\EventsWindow.xaml.cs">
       <DependentUpon>EventsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\FreedomWindow.xaml.cs">
+      <DependentUpon>FreedomWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\GraphMergeWindow.xaml.cs">
       <DependentUpon>GraphMergeWindow.xaml</DependentUpon>
     </Compile>
@@ -148,6 +151,9 @@
     <Compile Include="Views\PromptDialog.xaml.cs">
       <DependentUpon>PromptDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\selectTrace.xaml.cs">
+      <DependentUpon>selectTrace.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\TraceWindow.xaml.cs">
       <DependentUpon>TraceWindow.xaml</DependentUpon>
     </Compile>
@@ -156,6 +162,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\EventsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\FreedomWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -180,6 +190,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\PromptDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\selectTrace.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

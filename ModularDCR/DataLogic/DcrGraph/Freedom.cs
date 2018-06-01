@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,6 +37,11 @@ namespace DataLogic.DcrGraph
                 if (cycles != null)
                 {
                     var breakAble = false;
+                    // check any event included and no incoming except include
+                    breakAble = dcrGraph.Activities.Any(x =>
+                        !x.Excluded && x._relationsIncoming.All(y => y.Type == Relation.RelationType.Include));
+                    if (breakAble) return;
+
                     // check exists safe event which can not be excluded
                     foreach (var activity in dcrGraph.Activities)
                     {
@@ -62,7 +68,7 @@ namespace DataLogic.DcrGraph
                         var breakable = cyclesBreakAble[index];
                         if (breakable) continue;
                         var cycle = cycles[index];
-                        if (cycle.Any(x =>
+                        if (cycle.All(x =>
                             !x.Pending && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Response)))
                             cyclesBreakAble[index] = true;
                     }
@@ -95,6 +101,13 @@ namespace DataLogic.DcrGraph
                         if (deadCycle.All(x =>
                             !x.Pending && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Response)))
                         {
+                            if (deadCycle.Any(x => x._relationsOutgoing.Any(y =>
+                                (y.Type == Relation.RelationType.Condition ||
+                                y.Type == Relation.RelationType.Milestone) && !y.To.Id.Equals(y.From.Id))))
+                            {
+                                noDead.Add(false);
+                                continue;
+                            }
                             noDead.Add(true);
                             continue;
                         }
@@ -105,15 +118,27 @@ namespace DataLogic.DcrGraph
                         {
                             foreach (var activity in possiblyPending)
                             {
-                                if (!(activity.Excluded || activity._relationsIncoming.Any(x =>
-                                          x.Type == Relation.RelationType.Exclude && x.From.IsSafe(dcrGraph) &&
-                                          x.From._relationsIncoming.All(y => y.Type != Relation.RelationType.Exclude))))
+                                var graphWithNoRelationsToActivityBeingTested = new DcrGraph(dcrGraph.EditWindowString, new List<string>(), dcrGraph.EditWindowString, "graphWithNoRelationsToActivityBeingTested");
+                                var perhapsSafeActivity =
+                                    graphWithNoRelationsToActivityBeingTested.Activities.Where(x =>
+                                        x._relationsOutgoing.Any(y => y.To.Id.Equals(activity.Id) && y.Type == Relation.RelationType.Exclude)).ToList();
+
+                                foreach (var activity1 in perhapsSafeActivity)
+                                {
+                                    activity1._relationsOutgoing.Remove(activity1._relationsOutgoing.First(x =>
+                                        x.Type == Relation.RelationType.Exclude && x.To.Id.Equals(activity.Id)));
+                                }
+
+                                var anySafeExlude = perhapsSafeActivity.Any(x =>
+                                    x.IsSafe(graphWithNoRelationsToActivityBeingTested) && x._relationsIncoming.All(y => y.Type != Relation.RelationType.Exclude));
+
+                                if (!(activity.Excluded || anySafeExlude))
                                 {
                                     noDead.Add(false);
                                     break;
                                 }
                             }
-                            
+                            //noDead.Add(true);
                         }
                         else noDead.Add(true);
                     }

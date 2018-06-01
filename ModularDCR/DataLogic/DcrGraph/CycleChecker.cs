@@ -12,7 +12,7 @@ namespace DataLogic.DcrGraph
         {
             foreach (var activity in activities)
             {
-                var cycle = ExploreConditionMilestoneForExisting(activity, new List<Activity>() {activity});
+                var cycle = ExploreConditionMilestoneForExisting(activity, new List<Activity>() { activity });
                 if (cycle != null) return cycle;
             }
 
@@ -21,7 +21,20 @@ namespace DataLogic.DcrGraph
 
         private List<Activity> ExploreConditionMilestoneForExisting(Activity activity, List<Activity> checkedActivities)
         {
-            if (checkedActivities.Any(x => x.Id.Equals(activity.Id))) return checkedActivities;
+            if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
+            {
+                if (checkedActivities.Count == 1)
+                {
+                    if (activity._relationsIncoming.Any(x =>
+                        (x.Type == Relation.RelationType.Condition || x.Type == Relation.RelationType.Milestone) &&
+                        x.From.Id.Equals(activity.Id)))
+                    {
+                        return checkedActivities;
+                    }
+                    return null;
+                }
+                return checkedActivities;
+            }
             checkedActivities.Add(activity);
             foreach (var relation in activity._relationsIncoming)
             {
@@ -47,7 +60,20 @@ namespace DataLogic.DcrGraph
 
         private List<Activity> ExploreResponseForExisting(Activity activity, List<Activity> checkedActivities)
         {
-            if (checkedActivities.Any(x => x.Id.Equals(activity.Id))) return checkedActivities;
+            if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
+            {
+                if (checkedActivities.Count == 1)
+                {
+                    if (activity._relationsIncoming.Any(x =>
+                        (x.Type == Relation.RelationType.Response) &&
+                        x.From.Id.Equals(activity.Id)))
+                    {
+                        return checkedActivities;
+                    }
+                    return null;
+                }
+                return checkedActivities;
+            }
             checkedActivities.Add(activity);
             foreach (var relation in activity._relationsIncoming)
             {
@@ -72,7 +98,20 @@ namespace DataLogic.DcrGraph
 
         private List<Activity> ExploreForExisting(Activity activity, List<Activity> checkedActivities)
         {
-            if (checkedActivities.Any(x => x.Id.Equals(activity.Id))) return checkedActivities;
+            if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
+            {
+                if (checkedActivities.Count == 1)
+                {
+                    if (activity._relationsIncoming.Any(x =>
+                        (x.From.Id.Equals(activity.Id))))
+                    {
+                        return checkedActivities;
+                    }
+                    return null;
+                }
+
+                return checkedActivities;
+            }
             checkedActivities.Add(activity);
             foreach (var relation in activity._relationsIncoming)
             {
@@ -88,15 +127,27 @@ namespace DataLogic.DcrGraph
             var cycles = new List<List<Activity>>();
             foreach (var activity in activities)
             {
-                var cycle = ExploreAllConditionMilestoneForExisting(activity, new List<Activity>() { activity }, new List<List<Activity>>());
+                var cycle = ExploreAllConditionMilestoneForExisting(activity, new List<Activity>(), new List<List<Activity>>());
                 if (cycle != null) cycles.AddRange(cycle);
             }
 
-            return null;
+            return cycles.Count > 0 ? cycles : null;
         }
 
         private List<List<Activity>> ExploreAllConditionMilestoneForExisting(Activity activity, List<Activity> checkedActivities, List<List<Activity>> cycles)
         {
+            if (checkedActivities.Count == 0)
+            {
+                if (activity._relationsIncoming.Any(x =>
+                    (x.Type == Relation.RelationType.Condition || x.Type == Relation.RelationType.Milestone) &&
+                    x.From.Id.Equals(activity.Id)))
+                {
+                    checkedActivities.Add(activity);
+                    cycles.Add(checkedActivities);
+                    return cycles;
+                }
+            }
+
             if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
             {
                 cycles.Add(checkedActivities);
@@ -107,16 +158,17 @@ namespace DataLogic.DcrGraph
 
             foreach (var relation in activity._relationsIncoming)
             {
-                if (relation.Type != Relation.RelationType.Condition ||
+                if (relation.Type != Relation.RelationType.Condition &&
                     relation.Type != Relation.RelationType.Milestone) continue;
-                var cycle = ExploreAllConditionMilestoneForExisting(relation.From, checkedActivities, cycles);
+                if (checkedActivities.Any(x => x.Id.Equals(relation.From.Id) && x.Id.Equals(checkedActivities.Last().Id))) continue;
+                var cycle = ExploreAllConditionMilestoneForExisting(relation.From, checkedActivities, new List<List<Activity>>());
                 if (cycle != null)
                 {
                     cycles.AddRange(cycle);
-                    return cycles;
                 }
             }
 
+            if (cycles.Count > 0) return cycles;
             return null;
         }
 
@@ -129,13 +181,24 @@ namespace DataLogic.DcrGraph
                 if (cycle != null) cycles.AddRange(cycle);
             }
 
-            return null;
+            return cycles.Count > 0 ? cycles : null;
         }
 
         private List<List<Activity>> ExploreAllResponseForExisting(Activity activity, List<Activity> checkedActivities, List<List<Activity>> cycles)
         {
             if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
             {
+                if (checkedActivities.Count == 1)
+                {
+                    if (activity._relationsIncoming.Any(x =>
+                        (x.Type == Relation.RelationType.Response) &&
+                        x.From.Id.Equals(activity.Id)))
+                    {
+                        cycles.Add(checkedActivities);
+                        return cycles;
+                    }
+                    return null;
+                }
                 cycles.Add(checkedActivities);
                 return cycles;
             }
