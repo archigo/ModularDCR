@@ -226,10 +226,10 @@ namespace DataLogic.DcrGraph
                         if(Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
 
                         //no old to new
-                        if(Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && !Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        //if(Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && !Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
 
                         // Includes to old must exists beforehand
-                        if (Activities.Any(x => x.Id.Equals(newRelation.To.Id)) && !_relations.Any(x => x.Type == Relation.RelationType.Include && x.From.Id.Equals(newRelation.From.Id) && x.To.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        //if (Activities.Any(x => x.Id.Equals(newRelation.To.Id)) && !_relations.Any(x => x.Type == Relation.RelationType.Include && x.From.Id.Equals(newRelation.From.Id) && x.To.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
                         break;
                     case Relation.RelationType.Exclude:
                         // not between old
@@ -241,7 +241,7 @@ namespace DataLogic.DcrGraph
                         // not between old
                         if (Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
                         //no old to new
-                        if (Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && !Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
+                        //if (Activities.Any(x => x.Id.Equals(newRelation.From.Id)) && !Activities.Any(x => x.Id.Equals(newRelation.To.Id))) return new Tuple<Activity, Relation>(newRelation.From, newRelation);
                         break;
                     case Relation.RelationType.Condition:
                     case Relation.RelationType.Milestone:
