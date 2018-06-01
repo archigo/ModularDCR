@@ -177,7 +177,7 @@ namespace DataLogic.DcrGraph
             var cycles = new List<List<Activity>>();
             foreach (var activity in activities)
             {
-                var cycle = ExploreAllResponseForExisting(activity, new List<Activity>() { activity }, new List<List<Activity>>());
+                var cycle = ExploreAllResponseForExisting(activity, new List<Activity>(), new List<List<Activity>>());
                 if (cycle != null) cycles.AddRange(cycle);
             }
 
@@ -186,19 +186,20 @@ namespace DataLogic.DcrGraph
 
         private List<List<Activity>> ExploreAllResponseForExisting(Activity activity, List<Activity> checkedActivities, List<List<Activity>> cycles)
         {
+            if (checkedActivities.Count == 0)
+            {
+                if (activity._relationsIncoming.Any(x =>
+                    (x.Type == Relation.RelationType.Response) &&
+                    x.From.Id.Equals(activity.Id)))
+                {
+                    checkedActivities.Add(activity);
+                    cycles.Add(checkedActivities);
+                    return cycles;
+                }
+            }
+
             if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
             {
-                if (checkedActivities.Count == 1)
-                {
-                    if (activity._relationsIncoming.Any(x =>
-                        (x.Type == Relation.RelationType.Response) &&
-                        x.From.Id.Equals(activity.Id)))
-                    {
-                        cycles.Add(checkedActivities);
-                        return cycles;
-                    }
-                    return null;
-                }
                 cycles.Add(checkedActivities);
                 return cycles;
             }
@@ -208,15 +209,63 @@ namespace DataLogic.DcrGraph
             foreach (var relation in activity._relationsIncoming)
             {
                 if (relation.Type != Relation.RelationType.Response) continue;
-                var cycle = ExploreAllResponseForExisting(relation.From, checkedActivities, cycles);
+                if (checkedActivities.Any(x => x.Id.Equals(relation.From.Id) && x.Id.Equals(checkedActivities.Last().Id))) continue;
+                var cycle = ExploreAllResponseForExisting(relation.From, checkedActivities, new List<List<Activity>>());
                 if (cycle != null)
                 {
                     cycles.AddRange(cycle);
-                    return cycles;
                 }
             }
 
+            if (cycles.Count > 0) return cycles;
             return null;
         }
+
+        //public List<List<Activity>> GetAllCycleResponse(List<Activity> activities)
+        //{
+        //    var cycles = new List<List<Activity>>();
+        //    foreach (var activity in activities)
+        //    {
+        //        var cycle = ExploreAllResponseForExisting(activity, new List<Activity>() { activity }, new List<List<Activity>>());
+        //        if (cycle != null) cycles.AddRange(cycle);
+        //    }
+
+        //    return cycles.Count > 0 ? cycles : null;
+        //}
+
+        //private List<List<Activity>> ExploreAllResponseForExisting(Activity activity, List<Activity> checkedActivities, List<List<Activity>> cycles)
+        //{
+        //    if (checkedActivities.Any(x => x.Id.Equals(activity.Id)))
+        //    {
+        //        if (checkedActivities.Count == 1)
+        //        {
+        //            if (activity._relationsIncoming.Any(x =>
+        //                (x.Type == Relation.RelationType.Response) &&
+        //                x.From.Id.Equals(activity.Id)))
+        //            {
+        //                cycles.Add(checkedActivities);
+        //                return cycles;
+        //            }
+        //            return null;
+        //        }
+        //        cycles.Add(checkedActivities);
+        //        return cycles;
+        //    }
+
+        //    checkedActivities.Add(activity);
+
+        //    foreach (var relation in activity._relationsIncoming)
+        //    {
+        //        if (relation.Type != Relation.RelationType.Response) continue;
+        //        var cycle = ExploreAllResponseForExisting(relation.From, checkedActivities, cycles);
+        //        if (cycle != null)
+        //        {
+        //            cycles.AddRange(cycle);
+        //            return cycles;
+        //        }
+        //    }
+
+        //    return null;
+        //}
     }
 }
